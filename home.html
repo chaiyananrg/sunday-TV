@@ -9,9 +9,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        html, body {
+            height: 100%;
+        }
         body {
             font-family: 'Mitr', 'Inter', sans-serif;
-            background: linear-gradient(160deg, #89f7fe 0%, #66a6ff 100%);
+            /* เปลี่ยนพื้นหลังจาก gradient เป็นสีฟ้าโทนเดียวที่สบายตา */
+            background-color: #a0d2eb; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .video-wrapper {
             background: rgba(255, 255, 255, 0.6);
@@ -20,6 +27,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             transition: all 0.3s ease;
+            aspect-ratio: 4 / 3;
         }
         .video-wrapper:hover {
             transform: translateY(-5px);
@@ -48,60 +56,57 @@
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4 text-gray-800">
+<body class="p-4">
 
     <!-- Security Warning Container -->
-    <div id="security-warning" class="hidden w-full max-w-2xl p-6 bg-red-100 border-2 border-red-500 rounded-2xl text-center shadow-lg">
-        <h2 class="text-2xl font-bold text-red-700 mb-3">การเชื่อมต่อไม่ปลอดภัย</h2>
-        <p class="text-red-600">
-            เว็บเบราว์เซอร์ของคุณต้องการการเชื่อมต่อที่ปลอดภัย (HTTPS) เพื่ออนุญาตให้เว็บไซต์นี้เข้าถึงกล้องและไมโครโฟน
+    <div id="security-warning" class="hidden w-full max-w-2xl p-8 bg-white/70 backdrop-blur-lg border border-white/30 rounded-2xl text-center shadow-2xl">
+        <div class="mx-auto bg-amber-100 h-16 w-16 flex items-center justify-center rounded-full border-4 border-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+        </div>
+        <h2 class="text-3xl font-bold text-gray-800 mt-4">การเชื่อมต่อไม่ปลอดภัย</h2>
+        <p class="text-gray-600 mt-2">
+            เพื่อความปลอดภัยของคุณ เบราว์เซอร์จะอนุญาตให้ใช้งานกล้องและไมโครโฟนได้บนเว็บไซต์ที่มีการเชื่อมต่อแบบ <strong class="text-green-600">HTTPS</strong> เท่านั้น
         </p>
-        <p class="mt-4 text-sm text-gray-600">
-            เพื่อใช้งาน Sunday TV, กรุณาเข้าถึงเว็บไซต์นี้ผ่านที่อยู่ที่เป็น <strong class="font-semibold">https://</strong>
+        <p class="mt-4 text-sm text-gray-500 bg-gray-100 p-3 rounded-lg">
+            แอปพลิเคชันนี้จำเป็นต้องทำงานบนเซิร์ฟเวอร์ที่รองรับ HTTPS เพื่อให้สามารถเริ่มวิดีโอแชทได้
         </p>
     </div>
 
     <!-- Main App Container -->
-    <div id="app-container" class="w-full max-w-6xl mx-auto">
+    <div id="app-container" class="hidden w-full max-w-7xl mx-auto">
         <!-- Header with Logo -->
         <header class="flex flex-col items-center justify-center mb-6 text-center">
+            <!-- อัปเดต URL ของโลโก้ตามที่ร้องขอ -->
             <img src="https://tv.sunday.work.gd/sunday-TV.png" alt="โลโก้ Sunday TV" class="h-20 w-auto mb-3"
-                 onerror="this.onerror=null; this.src='https://placehold.co/200x80/66a6ff/FFFFFF?text=Sunday+TV';">
+                 onerror="this.onerror=null; this.src='https://placehold.co/200x80/a0d2eb/FFFFFF?text=Sunday+TV';">
             <h1 class="text-4xl md:text-5xl font-bold text-white" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">Sunday TV</h1>
             <p class="text-white text-opacity-90 mt-1">พบปะเพื่อนใหม่ในวันสบายๆ ของคุณ</p>
         </header>
 
         <!-- Video streams container -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mb-6">
             <!-- Remote Video -->
             <div class="video-wrapper rounded-2xl overflow-hidden relative">
                 <div class="absolute top-3 left-3 bg-black bg-opacity-40 px-3 py-1 rounded-full text-sm text-white font-medium">คู่สนทนา</div>
-                <video id="remoteVideo" autoplay playsinline class="aspect-video md:aspect-square lg:aspect-video"></video>
+                <video id="remoteVideo" autoplay playsinline></video>
                 <div id="waitingMessage" class="absolute inset-0 flex flex-col items-center justify-center text-gray-700 text-lg bg-white bg-opacity-50">
-                    <svg class="animate-spin h-8 w-8 text-blue-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     กำลังค้นหาเพื่อนคุย...
                 </div>
             </div>
             <!-- Local Video -->
             <div class="video-wrapper rounded-2xl overflow-hidden relative">
                  <div class="absolute top-3 left-3 bg-black bg-opacity-40 px-3 py-1 rounded-full text-sm text-white font-medium">คุณ</div>
-                <video id="localVideo" autoplay playsinline muted class="aspect-video md:aspect-square lg:aspect-video"></video>
+                <video id="localVideo" autoplay playsinline muted></video>
             </div>
         </div>
 
         <!-- Controls -->
         <div class="flex items-center justify-center space-x-4">
-            <button id="startButton" class="btn-sunny bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3 px-8 rounded-full text-lg flex items-center space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
-                <span>เริ่มเลย</span>
-            </button>
-            <button id="nextButton" class="btn-skip bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-full text-lg hidden items-center space-x-2 transition-all duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.168V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.832L4.555 5.168z" /></svg>
-                <span>ข้าม</span>
-            </button>
+            <button id="startButton" class="btn-sunny bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3 px-8 rounded-full text-lg flex items-center space-x-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg><span>เริ่มเลย</span></button>
+            <button id="nextButton" class="btn-skip bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-full text-lg hidden items-center space-x-2 transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.168V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.832L4.555 5.168z" /></svg><span>ข้าม</span></button>
         </div>
         
         <div id="status" class="text-center text-white text-opacity-80 mt-4 text-sm"></div>
@@ -110,15 +115,18 @@
 
     <script type="module">
         // --- Security Check for HTTPS ---
-        if (!window.isSecureContext) {
-            document.getElementById('app-container').style.display = 'none';
-            document.getElementById('security-warning').style.display = 'block';
+        if (window.isSecureContext) {
+            // If connection is secure, show the app and run it.
+            document.getElementById('app-container').style.display = 'block';
+            runApp();
         } else {
-            // Import Firebase modules
-            initializeApp(); // Run the app logic only if the context is secure
+            // If connection is NOT secure, only show the warning.
+            document.getElementById('security-warning').style.display = 'block';
         }
 
-        async function initializeApp() {
+        async function runApp() {
+            // This function contains all the application logic.
+            // It will only be called if the context is secure.
             const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
             const { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
             const { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, writeBatch } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
@@ -134,7 +142,7 @@
 
             // --- Firebase and WebRTC Globals ---
             let db, auth;
-            let localStream, remoteStream;
+            let localStream;
             let peerConnection;
             let currentRoomId = null;
             let userId = null;
@@ -147,10 +155,7 @@
             
             // --- STUN Servers Configuration ---
             const servers = {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                ],
+                iceServers: [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, ],
                 iceCandidatePoolSize: 10,
             };
 
@@ -163,19 +168,14 @@
                     const app = initializeApp(firebaseConfig);
                     db = getFirestore(app);
                     auth = getAuth(app);
-
                     onAuthStateChanged(auth, user => {
                         if (user) {
                             userId = user.uid;
                             userIdDisplay.textContent = `ID: ${userId}`;
-                            console.log("Authenticated with UID:", userId);
                             startButton.disabled = false;
                             statusDiv.textContent = "พร้อมที่จะเริ่มแล้ว!";
-                        } else {
-                            console.log("User is not signed in.");
                         }
                     });
-
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         await signInWithCustomToken(auth, __initial_auth_token);
                     } else {
@@ -193,7 +193,6 @@
                 startButton.disabled = true;
                 nextButton.disabled = true;
                 statusDiv.textContent = 'กำลังเปิดกล้อง...';
-
                 try {
                     localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                     localVideo.srcObject = localStream;
@@ -211,7 +210,6 @@
                 const q = query(roomsRef, where('status', '==', 'waiting'));
                 const querySnapshot = await getDocs(q);
                 const availableRoom = querySnapshot.docs.find(doc => doc.data().callerId !== userId);
-
                 if (availableRoom) {
                     currentRoomId = availableRoom.id;
                     statusDiv.textContent = `กำลังเข้าร่วมห้อง...`;
@@ -229,13 +227,7 @@
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
-                const roomData = {
-                    callerId: userId,
-                    offer: { type: offer.type, sdp: offer.sdp },
-                    status: 'waiting',
-                    createdAt: new Date(),
-                };
-                await setDoc(roomRef, roomData);
+                await setDoc(roomRef, { callerId: userId, offer: { type: offer.type, sdp: offer.sdp }, status: 'waiting', createdAt: new Date() });
                 listenForAnswer(roomRef);
             }
 
@@ -243,30 +235,19 @@
                 const roomRef = doc(db, roomsCollectionPath, roomId);
                 peerConnection = createPeerConnection();
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                const offer = roomData.offer;
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
                 const answer = await peerConnection.createAnswer();
                 await peerConnection.setLocalDescription(answer);
-                const answerData = {
-                    answer: { type: answer.type, sdp: answer.sdp },
-                    calleeId: userId,
-                    status: 'connected'
-                };
-                await updateDoc(roomRef, answerData);
+                await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp }, calleeId: userId, status: 'connected' });
                 listenForIceCandidates(roomRef);
             }
 
             function createPeerConnection() {
                 const pc = new RTCPeerConnection(servers);
-                pc.onicecandidate = event => {
-                    if (event.candidate && currentRoomId) {
-                        const candidatesCollection = collection(db, roomsCollectionPath, currentRoomId, 'candidates');
-                        addDoc(candidatesCollection, event.candidate.toJSON());
-                    }
-                };
-                pc.ontrack = event => {
-                    if (event.streams && event.streams[0]) {
-                        remoteVideo.srcObject = event.streams[0];
+                pc.onicecandidate = e => e.candidate && currentRoomId && addDoc(collection(db, roomsCollectionPath, currentRoomId, 'candidates'), e.candidate.toJSON());
+                pc.ontrack = e => {
+                    if (e.streams && e.streams[0]) {
+                        remoteVideo.srcObject = e.streams[0];
                         waitingMessage.style.display = 'none';
                         statusDiv.textContent = 'เชื่อมต่อสำเร็จ!';
                         startButton.classList.add('hidden');
@@ -276,7 +257,7 @@
                     }
                 };
                 pc.onconnectionstatechange = () => {
-                    if (peerConnection && (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'closed' || peerConnection.connectionState === 'failed')) {
+                    if (peerConnection && ['disconnected', 'closed', 'failed'].includes(peerConnection.connectionState)) {
                         statusDiv.textContent = 'คู่สนทนาตัดการเชื่อมต่อ';
                         hangUp();
                     }
@@ -288,9 +269,7 @@
                 roomUnsubscribe = onSnapshot(roomRef, async (snapshot) => {
                     const data = snapshot.data();
                     if (data && data.answer && peerConnection && !peerConnection.currentRemoteDescription) {
-                        statusDiv.textContent = 'ได้รับคำตอบรับ... กำลังเชื่อมต่อ';
-                        const answer = new RTCSessionDescription(data.answer);
-                        await peerConnection.setRemoteDescription(answer);
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
                         listenForIceCandidates(roomRef);
                     }
                 });
@@ -300,11 +279,8 @@
                 const candidatesCollection = collection(db, roomsCollectionPath, currentRoomId, 'candidates');
                 candidatesUnsubscribe = onSnapshot(candidatesCollection, (snapshot) => {
                     snapshot.docChanges().forEach(async (change) => {
-                        if (change.type === 'added') {
-                            const candidate = new RTCIceCandidate(change.doc.data());
-                            if (peerConnection && peerConnection.remoteDescription) {
-                                await peerConnection.addIceCandidate(candidate);
-                            }
+                        if (change.type === 'added' && peerConnection && peerConnection.remoteDescription) {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
                         }
                     });
                 });
@@ -313,28 +289,15 @@
             async function hangUp() {
                 if (roomUnsubscribe) roomUnsubscribe();
                 if (candidatesUnsubscribe) candidatesUnsubscribe();
-                roomUnsubscribe = null;
-                candidatesUnsubscribe = null;
-                if (peerConnection) {
-                    peerConnection.close();
-                    peerConnection = null;
-                }
-                if (localStream) {
-                    localStream.getTracks().forEach(track => track.stop());
-                    localStream = null;
-                }
+                if (peerConnection) peerConnection.close();
+                if (localStream) localStream.getTracks().forEach(track => track.stop());
                 if (currentRoomId) {
                     const roomRef = doc(db, roomsCollectionPath, currentRoomId);
-                    try {
-                        const candidatesQuery = query(collection(roomRef, 'candidates'));
-                        const candidatesSnapshot = await getDocs(candidatesQuery);
-                        const batch = writeBatch(db);
-                        candidatesSnapshot.forEach(doc => batch.delete(doc.ref));
-                        batch.delete(roomRef);
-                        await batch.commit();
-                    } catch (error) {
-                        console.error("Error cleaning up room:", error);
-                    }
+                    const candidatesSnapshot = await getDocs(collection(roomRef, 'candidates'));
+                    const batch = writeBatch(db);
+                    candidatesSnapshot.forEach(doc => batch.delete(doc.ref));
+                    batch.delete(roomRef);
+                    await batch.commit().catch(console.error);
                 }
                 remoteVideo.srcObject = null;
                 localVideo.srcObject = null;
@@ -353,13 +316,7 @@
                 await startButton.click();
             };
             
-            window.addEventListener('beforeunload', (e) => {
-                if (currentRoomId) {
-                    hangUp();
-                }
-            });
-
-            // --- Start the application ---
+            window.addEventListener('beforeunload', () => currentRoomId && hangUp());
             initializeFirebase();
         }
     </script>
