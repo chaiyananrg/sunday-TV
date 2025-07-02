@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunday TV - วิดีโอแชทกับเพื่อนใหม่</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Mitr', 'Inter', sans-serif;
+            background: linear-gradient(160deg, #89f7fe 0%, #66a6ff 100%);
+        }
+        .video-wrapper {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            transition: all 0.3s ease;
+        }
+        .video-wrapper:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror effect */
+        }
+        .btn-sunny {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px 0 rgba(252, 165, 3, 0.75);
+        }
+        .btn-sunny:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(252, 165, 3, 0.85);
+        }
+        .btn-skip {
+             box-shadow: 0 4px 15px 0 rgba(239, 68, 68, 0.5);
+        }
+        .btn-skip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(239, 68, 68, 0.6);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 text-gray-800">
+
+    <div class="w-full max-w-6xl mx-auto">
+        <!-- Header with Logo -->
+        <header class="flex flex-col items-center justify-center mb-6 text-center">
+            <img src="https://script.sunday.work.gd/sunday-TV.png" alt="โลโก้ Sunday TV" class="h-20 w-auto mb-3"
+                 onerror="this.onerror=null; this.src='https://placehold.co/200x80/66a6ff/FFFFFF?text=Sunday+TV';">
+            <h1 class="text-4xl md:text-5xl font-bold text-white" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">Sunday TV</h1>
+            <p class="text-white text-opacity-90 mt-1">พบปะเพื่อนใหม่ในวันสบายๆ ของคุณ</p>
+        </header>
+
+        <!-- Video streams container -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-6">
+            <!-- Remote Video -->
+            <div class="video-wrapper rounded-2xl overflow-hidden relative">
+                <div class="absolute top-3 left-3 bg-black bg-opacity-40 px-3 py-1 rounded-full text-sm text-white font-medium">คู่สนทนา</div>
+                <video id="remoteVideo" autoplay playsinline class="aspect-video md:aspect-square lg:aspect-video"></video>
+                <div id="waitingMessage" class="absolute inset-0 flex flex-col items-center justify-center text-gray-700 text-lg bg-white bg-opacity-50">
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    กำลังค้นหาเพื่อนคุย...
+                </div>
+            </div>
+            <!-- Local Video -->
+            <div class="video-wrapper rounded-2xl overflow-hidden relative">
+                 <div class="absolute top-3 left-3 bg-black bg-opacity-40 px-3 py-1 rounded-full text-sm text-white font-medium">คุณ</div>
+                <video id="localVideo" autoplay playsinline muted class="aspect-video md:aspect-square lg:aspect-video"></video>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex items-center justify-center space-x-4">
+            <button id="startButton" class="btn-sunny bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3 px-8 rounded-full text-lg flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                <span>เริ่มเลย</span>
+            </button>
+            <button id="nextButton" class="btn-skip bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-full text-lg hidden items-center space-x-2 transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.168V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.832L4.555 5.168z" /></svg>
+                <span>ข้าม</span>
+            </button>
+        </div>
+        
+        <div id="status" class="text-center text-white text-opacity-80 mt-4 text-sm"></div>
+        <div id="userIdDisplay" class="text-center text-blue-200 mt-2 text-xs break-all"></div>
+
+    </div>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- DOM Elements ---
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const startButton = document.getElementById('startButton');
+        const nextButton = document.getElementById('nextButton');
+        const waitingMessage = document.getElementById('waitingMessage');
+        const statusDiv = document.getElementById('status');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        // --- Firebase and WebRTC Globals ---
+        let db, auth;
+        let localStream, remoteStream;
+        let peerConnection;
+        let currentRoomId = null;
+        let userId = null;
+        let roomUnsubscribe = null;
+        let candidatesUnsubscribe = null;
+
+        // --- Firebase Configuration ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        
+        // --- STUN Servers Configuration ---
+        const servers = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+            ],
+            iceCandidatePoolSize: 10,
+        };
+
+        // --- Firestore Collection Path ---
+        const roomsCollectionPath = `artifacts/${appId}/public/data/rooms`;
+
+        // --- Initialize Firebase and Authentication ---
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, user => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = `ID: ${userId}`;
+                        console.log("Authenticated with UID:", userId);
+                        startButton.disabled = false;
+                        statusDiv.textContent = "พร้อมที่จะเริ่มแล้ว!";
+                    } else {
+                        console.log("User is not signed in.");
+                    }
+                });
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error);
+                statusDiv.textContent = "เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์";
+                startButton.disabled = true;
+            }
+        }
+
+        // --- Main Functions ---
+        startButton.onclick = async () => {
+            startButton.disabled = true;
+            nextButton.disabled = true;
+            statusDiv.textContent = 'กำลังเปิดกล้อง...';
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+                statusDiv.textContent = 'กำลังค้นหาคู่สนทนา...';
+                await findOrCreateRoom();
+            } catch (error) {
+                console.error('Error accessing media devices.', error);
+                statusDiv.textContent = 'ไม่สามารถเข้าถึงกล้องหรือไมโครโฟนได้: ' + error.message;
+                startButton.disabled = false;
+            }
+        };
+
+        async function findOrCreateRoom() {
+            const roomsRef = collection(db, roomsCollectionPath);
+            const q = query(roomsRef, where('status', '==', 'waiting'), where('callerId', '!=', userId));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const roomDoc = querySnapshot.docs[0];
+                currentRoomId = roomDoc.id;
+                statusDiv.textContent = `กำลังเข้าร่วมห้อง...`;
+                await joinRoom(roomDoc.id, roomDoc.data());
+            } else {
+                statusDiv.textContent = 'สร้างห้องใหม่และรอคู่สนทนา...';
+                await createRoom();
+            }
+        }
+
+        async function createRoom() {
+            const roomRef = doc(collection(db, roomsCollectionPath));
+            currentRoomId = roomRef.id;
+            peerConnection = createPeerConnection();
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            const roomData = {
+                callerId: userId,
+                offer: { type: offer.type, sdp: offer.sdp },
+                status: 'waiting',
+                createdAt: new Date(),
+            };
+            await setDoc(roomRef, roomData);
+            listenForAnswer(roomRef);
+        }
+
+        async function joinRoom(roomId, roomData) {
+            const roomRef = doc(db, roomsCollectionPath, roomId);
+            peerConnection = createPeerConnection();
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            const offer = roomData.offer;
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            const answerData = {
+                answer: { type: answer.type, sdp: answer.sdp },
+                calleeId: userId,
+                status: 'connected'
+            };
+            await updateDoc(roomRef, answerData);
+            listenForIceCandidates(roomRef);
+        }
+
+        function createPeerConnection() {
+            const pc = new RTCPeerConnection(servers);
+            pc.onicecandidate = event => {
+                if (event.candidate && currentRoomId) {
+                    const candidatesCollection = collection(db, roomsCollectionPath, currentRoomId, 'candidates');
+                    addDoc(candidatesCollection, event.candidate.toJSON());
+                }
+            };
+            pc.ontrack = event => {
+                if (event.streams && event.streams[0]) {
+                    remoteVideo.srcObject = event.streams[0];
+                    waitingMessage.style.display = 'none';
+                    statusDiv.textContent = 'เชื่อมต่อสำเร็จ!';
+                    startButton.classList.add('hidden');
+                    nextButton.classList.remove('hidden');
+                    nextButton.style.display = 'flex';
+                    nextButton.disabled = false;
+                }
+            };
+            pc.onconnectionstatechange = () => {
+                if (peerConnection && (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'closed' || peerConnection.connectionState === 'failed')) {
+                    statusDiv.textContent = 'คู่สนทนาตัดการเชื่อมต่อ';
+                    hangUp();
+                }
+            };
+            return pc;
+        }
+
+        function listenForAnswer(roomRef) {
+            roomUnsubscribe = onSnapshot(roomRef, async (snapshot) => {
+                const data = snapshot.data();
+                if (data && data.answer && peerConnection && !peerConnection.currentRemoteDescription) {
+                    statusDiv.textContent = 'ได้รับคำตอบรับ... กำลังเชื่อมต่อ';
+                    const answer = new RTCSessionDescription(data.answer);
+                    await peerConnection.setRemoteDescription(answer);
+                    listenForIceCandidates(roomRef);
+                }
+            });
+        }
+        
+        function listenForIceCandidates(roomRef) {
+            const candidatesCollection = collection(db, roomsCollectionPath, currentRoomId, 'candidates');
+            candidatesUnsubscribe = onSnapshot(candidatesCollection, (snapshot) => {
+                snapshot.docChanges().forEach(async (change) => {
+                    if (change.type === 'added') {
+                        const candidate = new RTCIceCandidate(change.doc.data());
+                        if (peerConnection) {
+                            await peerConnection.addIceCandidate(candidate);
+                        }
+                    }
+                });
+            });
+        }
+
+        async function hangUp() {
+            if (roomUnsubscribe) roomUnsubscribe();
+            if (candidatesUnsubscribe) candidatesUnsubscribe();
+            roomUnsubscribe = null;
+            candidatesUnsubscribe = null;
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            if (currentRoomId) {
+                const roomRef = doc(db, roomsCollectionPath, currentRoomId);
+                try {
+                    const candidatesQuery = query(collection(roomRef, 'candidates'));
+                    const candidatesSnapshot = await getDocs(candidatesQuery);
+                    const batch = writeBatch(db);
+                    candidatesSnapshot.forEach(doc => batch.delete(doc.ref));
+                    batch.delete(roomRef);
+                    await batch.commit();
+                } catch (error) {
+                    console.error("Error cleaning up room:", error);
+                }
+            }
+            remoteVideo.srcObject = null;
+            localVideo.srcObject = null;
+            waitingMessage.style.display = 'flex';
+            startButton.classList.remove('hidden');
+            nextButton.classList.add('hidden');
+            startButton.disabled = false;
+            statusDiv.textContent = 'การสนทนาจบลง กด "เริ่มเลย" เพื่อค้นหาใหม่';
+            currentRoomId = null;
+        }
+
+        nextButton.onclick = async () => {
+            nextButton.disabled = true;
+            statusDiv.textContent = 'กำลังค้นหาคนถัดไป...';
+            await hangUp();
+            await startButton.click();
+        };
+        
+        window.addEventListener('beforeunload', (e) => {
+            if (currentRoomId) {
+                hangUp();
+            }
+        });
+
+        // --- Start the application ---
+        initializeFirebase();
+    </script>
+</body>
+</html>
