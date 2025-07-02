@@ -50,10 +50,22 @@
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-4 text-gray-800">
 
-    <div class="w-full max-w-6xl mx-auto">
+    <!-- Security Warning Container -->
+    <div id="security-warning" class="hidden w-full max-w-2xl p-6 bg-red-100 border-2 border-red-500 rounded-2xl text-center shadow-lg">
+        <h2 class="text-2xl font-bold text-red-700 mb-3">การเชื่อมต่อไม่ปลอดภัย</h2>
+        <p class="text-red-600">
+            เว็บเบราว์เซอร์ของคุณต้องการการเชื่อมต่อที่ปลอดภัย (HTTPS) เพื่ออนุญาตให้เว็บไซต์นี้เข้าถึงกล้องและไมโครโฟน
+        </p>
+        <p class="mt-4 text-sm text-gray-600">
+            เพื่อใช้งาน Sunday TV, กรุณาเข้าถึงเว็บไซต์นี้ผ่านที่อยู่ที่เป็น <strong class="font-semibold">https://</strong>
+        </p>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="w-full max-w-6xl mx-auto">
         <!-- Header with Logo -->
         <header class="flex flex-col items-center justify-center mb-6 text-center">
-            <img src="https://script.sunday.work.gd/sunday-TV.png" alt="โลโก้ Sunday TV" class="h-20 w-auto mb-3"
+            <img src="https://tv.sunday.work.gd/sunday-TV.png" alt="โลโก้ Sunday TV" class="h-20 w-auto mb-3"
                  onerror="this.onerror=null; this.src='https://placehold.co/200x80/66a6ff/FFFFFF?text=Sunday+TV';">
             <h1 class="text-4xl md:text-5xl font-bold text-white" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">Sunday TV</h1>
             <p class="text-white text-opacity-90 mt-1">พบปะเพื่อนใหม่ในวันสบายๆ ของคุณ</p>
@@ -94,253 +106,262 @@
         
         <div id="status" class="text-center text-white text-opacity-80 mt-4 text-sm"></div>
         <div id="userIdDisplay" class="text-center text-blue-200 mt-2 text-xs break-all"></div>
-
     </div>
 
     <script type="module">
-        // Import Firebase modules
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // --- Security Check for HTTPS ---
+        if (!window.isSecureContext) {
+            document.getElementById('app-container').style.display = 'none';
+            document.getElementById('security-warning').style.display = 'block';
+        } else {
+            // Import Firebase modules
+            initializeApp(); // Run the app logic only if the context is secure
+        }
 
-        // --- DOM Elements ---
-        const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
-        const startButton = document.getElementById('startButton');
-        const nextButton = document.getElementById('nextButton');
-        const waitingMessage = document.getElementById('waitingMessage');
-        const statusDiv = document.getElementById('status');
-        const userIdDisplay = document.getElementById('userIdDisplay');
+        async function initializeApp() {
+            const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+            const { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+            const { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, writeBatch } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
 
-        // --- Firebase and WebRTC Globals ---
-        let db, auth;
-        let localStream, remoteStream;
-        let peerConnection;
-        let currentRoomId = null;
-        let userId = null;
-        let roomUnsubscribe = null;
-        let candidatesUnsubscribe = null;
+            // --- DOM Elements ---
+            const localVideo = document.getElementById('localVideo');
+            const remoteVideo = document.getElementById('remoteVideo');
+            const startButton = document.getElementById('startButton');
+            const nextButton = document.getElementById('nextButton');
+            const waitingMessage = document.getElementById('waitingMessage');
+            const statusDiv = document.getElementById('status');
+            const userIdDisplay = document.getElementById('userIdDisplay');
 
-        // --- Firebase Configuration ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        
-        // --- STUN Servers Configuration ---
-        const servers = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-            ],
-            iceCandidatePoolSize: 10,
-        };
+            // --- Firebase and WebRTC Globals ---
+            let db, auth;
+            let localStream, remoteStream;
+            let peerConnection;
+            let currentRoomId = null;
+            let userId = null;
+            let roomUnsubscribe = null;
+            let candidatesUnsubscribe = null;
 
-        // --- Firestore Collection Path ---
-        const roomsCollectionPath = `artifacts/${appId}/public/data/rooms`;
+            // --- Firebase Configuration ---
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            
+            // --- STUN Servers Configuration ---
+            const servers = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                ],
+                iceCandidatePoolSize: 10,
+            };
 
-        // --- Initialize Firebase and Authentication ---
-        async function initializeFirebase() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
+            // --- Firestore Collection Path ---
+            const roomsCollectionPath = `artifacts/${appId}/public/data/rooms`;
 
-                onAuthStateChanged(auth, user => {
-                    if (user) {
-                        userId = user.uid;
-                        userIdDisplay.textContent = `ID: ${userId}`;
-                        console.log("Authenticated with UID:", userId);
-                        startButton.disabled = false;
-                        statusDiv.textContent = "พร้อมที่จะเริ่มแล้ว!";
+            // --- Initialize Firebase and Authentication ---
+            async function initializeFirebase() {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    onAuthStateChanged(auth, user => {
+                        if (user) {
+                            userId = user.uid;
+                            userIdDisplay.textContent = `ID: ${userId}`;
+                            console.log("Authenticated with UID:", userId);
+                            startButton.disabled = false;
+                            statusDiv.textContent = "พร้อมที่จะเริ่มแล้ว!";
+                        } else {
+                            console.log("User is not signed in.");
+                        }
+                    });
+
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
                     } else {
-                        console.log("User is not signed in.");
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Firebase Initialization Error:", error);
+                    statusDiv.textContent = "เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์";
+                    startButton.disabled = true;
+                }
+            }
+
+            // --- Main Functions ---
+            startButton.onclick = async () => {
+                startButton.disabled = true;
+                nextButton.disabled = true;
+                statusDiv.textContent = 'กำลังเปิดกล้อง...';
+
+                try {
+                    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    localVideo.srcObject = localStream;
+                    statusDiv.textContent = 'กำลังค้นหาคู่สนทนา...';
+                    await findOrCreateRoom();
+                } catch (error) {
+                    console.error('Error accessing media devices.', error);
+                    statusDiv.textContent = 'ไม่สามารถเข้าถึงกล้องหรือไมโครโฟนได้: ' + error.message;
+                    startButton.disabled = false;
+                }
+            };
+
+            async function findOrCreateRoom() {
+                const roomsRef = collection(db, roomsCollectionPath);
+                const q = query(roomsRef, where('status', '==', 'waiting'));
+                const querySnapshot = await getDocs(q);
+                const availableRoom = querySnapshot.docs.find(doc => doc.data().callerId !== userId);
+
+                if (availableRoom) {
+                    currentRoomId = availableRoom.id;
+                    statusDiv.textContent = `กำลังเข้าร่วมห้อง...`;
+                    await joinRoom(availableRoom.id, availableRoom.data());
+                } else {
+                    statusDiv.textContent = 'สร้างห้องใหม่และรอคู่สนทนา...';
+                    await createRoom();
+                }
+            }
+
+            async function createRoom() {
+                const roomRef = doc(collection(db, roomsCollectionPath));
+                currentRoomId = roomRef.id;
+                peerConnection = createPeerConnection();
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                const roomData = {
+                    callerId: userId,
+                    offer: { type: offer.type, sdp: offer.sdp },
+                    status: 'waiting',
+                    createdAt: new Date(),
+                };
+                await setDoc(roomRef, roomData);
+                listenForAnswer(roomRef);
+            }
+
+            async function joinRoom(roomId, roomData) {
+                const roomRef = doc(db, roomsCollectionPath, roomId);
+                peerConnection = createPeerConnection();
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                const offer = roomData.offer;
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                const answerData = {
+                    answer: { type: answer.type, sdp: answer.sdp },
+                    calleeId: userId,
+                    status: 'connected'
+                };
+                await updateDoc(roomRef, answerData);
+                listenForIceCandidates(roomRef);
+            }
+
+            function createPeerConnection() {
+                const pc = new RTCPeerConnection(servers);
+                pc.onicecandidate = event => {
+                    if (event.candidate && currentRoomId) {
+                        const candidatesCollection = collection(db, roomsCollectionPath, currentRoomId, 'candidates');
+                        addDoc(candidatesCollection, event.candidate.toJSON());
+                    }
+                };
+                pc.ontrack = event => {
+                    if (event.streams && event.streams[0]) {
+                        remoteVideo.srcObject = event.streams[0];
+                        waitingMessage.style.display = 'none';
+                        statusDiv.textContent = 'เชื่อมต่อสำเร็จ!';
+                        startButton.classList.add('hidden');
+                        nextButton.classList.remove('hidden');
+                        nextButton.style.display = 'flex';
+                        nextButton.disabled = false;
+                    }
+                };
+                pc.onconnectionstatechange = () => {
+                    if (peerConnection && (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'closed' || peerConnection.connectionState === 'failed')) {
+                        statusDiv.textContent = 'คู่สนทนาตัดการเชื่อมต่อ';
+                        hangUp();
+                    }
+                };
+                return pc;
+            }
+
+            function listenForAnswer(roomRef) {
+                roomUnsubscribe = onSnapshot(roomRef, async (snapshot) => {
+                    const data = snapshot.data();
+                    if (data && data.answer && peerConnection && !peerConnection.currentRemoteDescription) {
+                        statusDiv.textContent = 'ได้รับคำตอบรับ... กำลังเชื่อมต่อ';
+                        const answer = new RTCSessionDescription(data.answer);
+                        await peerConnection.setRemoteDescription(answer);
+                        listenForIceCandidates(roomRef);
                     }
                 });
-
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Firebase Initialization Error:", error);
-                statusDiv.textContent = "เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์";
-                startButton.disabled = true;
             }
-        }
+            
+            function listenForIceCandidates(roomRef) {
+                const candidatesCollection = collection(db, roomsCollectionPath, currentRoomId, 'candidates');
+                candidatesUnsubscribe = onSnapshot(candidatesCollection, (snapshot) => {
+                    snapshot.docChanges().forEach(async (change) => {
+                        if (change.type === 'added') {
+                            const candidate = new RTCIceCandidate(change.doc.data());
+                            if (peerConnection && peerConnection.remoteDescription) {
+                                await peerConnection.addIceCandidate(candidate);
+                            }
+                        }
+                    });
+                });
+            }
 
-        // --- Main Functions ---
-        startButton.onclick = async () => {
-            startButton.disabled = true;
-            nextButton.disabled = true;
-            statusDiv.textContent = 'กำลังเปิดกล้อง...';
-
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localVideo.srcObject = localStream;
-                statusDiv.textContent = 'กำลังค้นหาคู่สนทนา...';
-                await findOrCreateRoom();
-            } catch (error) {
-                console.error('Error accessing media devices.', error);
-                statusDiv.textContent = 'ไม่สามารถเข้าถึงกล้องหรือไมโครโฟนได้: ' + error.message;
+            async function hangUp() {
+                if (roomUnsubscribe) roomUnsubscribe();
+                if (candidatesUnsubscribe) candidatesUnsubscribe();
+                roomUnsubscribe = null;
+                candidatesUnsubscribe = null;
+                if (peerConnection) {
+                    peerConnection.close();
+                    peerConnection = null;
+                }
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    localStream = null;
+                }
+                if (currentRoomId) {
+                    const roomRef = doc(db, roomsCollectionPath, currentRoomId);
+                    try {
+                        const candidatesQuery = query(collection(roomRef, 'candidates'));
+                        const candidatesSnapshot = await getDocs(candidatesQuery);
+                        const batch = writeBatch(db);
+                        candidatesSnapshot.forEach(doc => batch.delete(doc.ref));
+                        batch.delete(roomRef);
+                        await batch.commit();
+                    } catch (error) {
+                        console.error("Error cleaning up room:", error);
+                    }
+                }
+                remoteVideo.srcObject = null;
+                localVideo.srcObject = null;
+                waitingMessage.style.display = 'flex';
+                startButton.classList.remove('hidden');
+                nextButton.classList.add('hidden');
                 startButton.disabled = false;
+                statusDiv.textContent = 'การสนทนาจบลง กด "เริ่มเลย" เพื่อค้นหาใหม่';
+                currentRoomId = null;
             }
-        };
 
-        async function findOrCreateRoom() {
-            const roomsRef = collection(db, roomsCollectionPath);
-            const q = query(roomsRef, where('status', '==', 'waiting'), where('callerId', '!=', userId));
-            const querySnapshot = await getDocs(q);
-
-            if (!querySnapshot.empty) {
-                const roomDoc = querySnapshot.docs[0];
-                currentRoomId = roomDoc.id;
-                statusDiv.textContent = `กำลังเข้าร่วมห้อง...`;
-                await joinRoom(roomDoc.id, roomDoc.data());
-            } else {
-                statusDiv.textContent = 'สร้างห้องใหม่และรอคู่สนทนา...';
-                await createRoom();
-            }
-        }
-
-        async function createRoom() {
-            const roomRef = doc(collection(db, roomsCollectionPath));
-            currentRoomId = roomRef.id;
-            peerConnection = createPeerConnection();
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            const roomData = {
-                callerId: userId,
-                offer: { type: offer.type, sdp: offer.sdp },
-                status: 'waiting',
-                createdAt: new Date(),
+            nextButton.onclick = async () => {
+                nextButton.disabled = true;
+                statusDiv.textContent = 'กำลังค้นหาคนถัดไป...';
+                await hangUp();
+                await startButton.click();
             };
-            await setDoc(roomRef, roomData);
-            listenForAnswer(roomRef);
-        }
-
-        async function joinRoom(roomId, roomData) {
-            const roomRef = doc(db, roomsCollectionPath, roomId);
-            peerConnection = createPeerConnection();
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            const offer = roomData.offer;
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            const answerData = {
-                answer: { type: answer.type, sdp: answer.sdp },
-                calleeId: userId,
-                status: 'connected'
-            };
-            await updateDoc(roomRef, answerData);
-            listenForIceCandidates(roomRef);
-        }
-
-        function createPeerConnection() {
-            const pc = new RTCPeerConnection(servers);
-            pc.onicecandidate = event => {
-                if (event.candidate && currentRoomId) {
-                    const candidatesCollection = collection(db, roomsCollectionPath, currentRoomId, 'candidates');
-                    addDoc(candidatesCollection, event.candidate.toJSON());
-                }
-            };
-            pc.ontrack = event => {
-                if (event.streams && event.streams[0]) {
-                    remoteVideo.srcObject = event.streams[0];
-                    waitingMessage.style.display = 'none';
-                    statusDiv.textContent = 'เชื่อมต่อสำเร็จ!';
-                    startButton.classList.add('hidden');
-                    nextButton.classList.remove('hidden');
-                    nextButton.style.display = 'flex';
-                    nextButton.disabled = false;
-                }
-            };
-            pc.onconnectionstatechange = () => {
-                if (peerConnection && (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'closed' || peerConnection.connectionState === 'failed')) {
-                    statusDiv.textContent = 'คู่สนทนาตัดการเชื่อมต่อ';
+            
+            window.addEventListener('beforeunload', (e) => {
+                if (currentRoomId) {
                     hangUp();
                 }
-            };
-            return pc;
-        }
-
-        function listenForAnswer(roomRef) {
-            roomUnsubscribe = onSnapshot(roomRef, async (snapshot) => {
-                const data = snapshot.data();
-                if (data && data.answer && peerConnection && !peerConnection.currentRemoteDescription) {
-                    statusDiv.textContent = 'ได้รับคำตอบรับ... กำลังเชื่อมต่อ';
-                    const answer = new RTCSessionDescription(data.answer);
-                    await peerConnection.setRemoteDescription(answer);
-                    listenForIceCandidates(roomRef);
-                }
             });
-        }
-        
-        function listenForIceCandidates(roomRef) {
-            const candidatesCollection = collection(db, roomsCollectionPath, currentRoomId, 'candidates');
-            candidatesUnsubscribe = onSnapshot(candidatesCollection, (snapshot) => {
-                snapshot.docChanges().forEach(async (change) => {
-                    if (change.type === 'added') {
-                        const candidate = new RTCIceCandidate(change.doc.data());
-                        if (peerConnection) {
-                            await peerConnection.addIceCandidate(candidate);
-                        }
-                    }
-                });
-            });
-        }
 
-        async function hangUp() {
-            if (roomUnsubscribe) roomUnsubscribe();
-            if (candidatesUnsubscribe) candidatesUnsubscribe();
-            roomUnsubscribe = null;
-            candidatesUnsubscribe = null;
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
-            }
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            if (currentRoomId) {
-                const roomRef = doc(db, roomsCollectionPath, currentRoomId);
-                try {
-                    const candidatesQuery = query(collection(roomRef, 'candidates'));
-                    const candidatesSnapshot = await getDocs(candidatesQuery);
-                    const batch = writeBatch(db);
-                    candidatesSnapshot.forEach(doc => batch.delete(doc.ref));
-                    batch.delete(roomRef);
-                    await batch.commit();
-                } catch (error) {
-                    console.error("Error cleaning up room:", error);
-                }
-            }
-            remoteVideo.srcObject = null;
-            localVideo.srcObject = null;
-            waitingMessage.style.display = 'flex';
-            startButton.classList.remove('hidden');
-            nextButton.classList.add('hidden');
-            startButton.disabled = false;
-            statusDiv.textContent = 'การสนทนาจบลง กด "เริ่มเลย" เพื่อค้นหาใหม่';
-            currentRoomId = null;
+            // --- Start the application ---
+            initializeFirebase();
         }
-
-        nextButton.onclick = async () => {
-            nextButton.disabled = true;
-            statusDiv.textContent = 'กำลังค้นหาคนถัดไป...';
-            await hangUp();
-            await startButton.click();
-        };
-        
-        window.addEventListener('beforeunload', (e) => {
-            if (currentRoomId) {
-                hangUp();
-            }
-        });
-
-        // --- Start the application ---
-        initializeFirebase();
     </script>
 </body>
 </html>
