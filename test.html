@@ -12,17 +12,27 @@
     <style>
         body { font-family: 'Sarabun', sans-serif; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         .sky-background { background: linear-gradient(170deg, #0f172a 0%, #1e293b 60%, #334155 100%); }
-        .glass-panel { background: rgba(30, 41, 59, 0.25); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
-        .glass-input { background: rgba(51, 65, 85, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 0.75rem; transition: all 0.2s ease; }
-        .glass-input:focus { background: rgba(71, 85, 105, 0.6); border-color: rgba(99, 102, 241, 0.8); box-shadow: none; outline: none; }
-        .custom-selector-panel { position: absolute; z-index: 50; top: 100%; left: 0; right: 0; margin-top: 0.5rem; animation: fadeIn 0.3s ease-out; }
-        #remote-video, #local-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        #remote-video { background-color: #111; }
+        
+        /* --- LIQUID GLASS EFFECT --- */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.25); /* slate-800/25 */
+            -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: background 0.3s ease, border 0.3s ease;
+        }
+
+        /* --- VIDEO STYLING --- */
+        #remote-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); background-color: #111; }
         #local-video-container { position: absolute; width: 30%; max-width: 140px; aspect-ratio: 3 / 4; border-radius: 1rem; overflow: hidden; border: 3px solid rgba(255, 255, 255, 0.8); box-shadow: 0 8px 20px rgba(0,0,0,0.25); z-index: 20; transition: all 0.3s ease-in-out; }
+        #local-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         @media (orientation: portrait) { #local-video-container { bottom: 8rem; left: 50%; transform: translateX(-50%); } }
         @media (orientation: landscape) { #local-video-container { bottom: auto; left: auto; top: 50%; right: 1.5rem; transform: translateY(-50%); max-width: 200px; max-height: 70vh; } }
+        
+        /* --- THEMED BUTTONS & LOADER --- */
         .themed-btn { border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #FFC107; box-shadow: 0 4px 10px rgba(0,0,0,0.2), inset 0 -4px 6px rgba(0,0,0,0.1); transition: all 0.2s ease-in-out; }
         .themed-btn:hover { transform: scale(1.1); background-color: #FFD54F; }
+        .themed-btn:active { transform: scale(1.05); }
         .sun-loader { width: 80px; height: 80px; position: relative; animation: spin 10s linear infinite; }
         .sun-loader .sun-body { width: 50px; height: 50px; background-color: #FFC107; border-radius: 50%; position: absolute; top: 15px; left: 15px; }
         .sun-loader .sun-ray { background-color: #FFC107; width: 6px; height: 18px; border-radius: 3px; position: absolute; top: -3px; left: 37px; }
@@ -34,49 +44,54 @@
 </head>
 <body class="h-screen w-screen overflow-hidden dark">
 
-    <!-- Settings View -->
+    <!-- ส่วนตั้งค่าเริ่มต้น -->
     <div id="settings-view" class="sky-background w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
         <div class="absolute -top-20 -right-20 w-64 h-64 bg-yellow-500/20 rounded-full blur-3xl"></div>
         <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl"></div>
+        
         <div class="flex flex-col lg:flex-row gap-6 w-full max-w-4xl z-10 fade-in">
+            <!-- Left Panel: Settings -->
             <div class="glass-panel p-8 w-full lg:w-2/3 flex flex-col items-center">
                 <img src="https://img2.pic.in.th/pic/sunday-TV.png" alt="Sunday TV Logo" class="w-48 h-auto mb-4 drop-shadow-lg" onerror="this.style.display='none'">
-                <p class="text-gray-300 mb-8">พบเพื่อนใหม่ใต้ท้องฟ้า</p>
-                <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div id="my-country-selector" class="relative">
-                        <label class="block mb-1 text-sm font-medium text-gray-300">ประเทศของคุณ</label>
-                        <button type="button" class="selector-btn w-full p-3 glass-input text-gray-200 flex items-center justify-between"></button>
-                    </div>
-                    <div id="partner-country-selector" class="relative">
-                        <label class="block mb-1 text-sm font-medium text-gray-300">ค้นหาเพื่อนจาก</label>
-                         <button type="button" class="selector-btn w-full p-3 glass-input text-gray-200 flex items-center justify-between"></button>
-                    </div>
+                <p class="text-gray-300 mb-6">พบเพื่อนใหม่ใต้ท้องฟ้า</p>
+                
+                <!-- Announcement -->
+                <div class="w-full p-4 mb-6 text-center bg-indigo-500/20 rounded-lg border border-indigo-400/30">
+                    <p class="text-indigo-300 text-sm">ประกาศ: ฟังก์ชันเลือกประเทศกำลังอยู่ในระหว่างการพัฒนา</p>
                 </div>
-                <button id="save-settings-btn" class="w-full mt-6 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-200 active:scale-95 shadow-md">บันทึกการตั้งค่า</button>
-                <button id="start-btn" class="w-full mt-4 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-4 px-4 rounded-xl text-xl transition-transform duration-200 active:scale-95 shadow-lg" disabled>เริ่มค้นหา!</button>
+
+                <button id="start-btn" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-4 px-4 rounded-xl text-2xl transition-transform duration-200 active:scale-95 shadow-lg" disabled>เริ่มค้นหา!</button>
                 <div id="user-id-display" class="mt-4 text-xs text-gray-400 text-center"></div>
             </div>
+
+            <!-- Right Panel: Online Users -->
             <div class="glass-panel p-8 w-full lg:w-1/3 flex flex-col items-center justify-center">
                 <h2 class="text-2xl font-bold text-gray-200 mb-4 text-center">ออนไลน์ตอนนี้</h2>
-                <div id="online-users-display" class="flex-grow flex items-center justify-center w-full"></div>
+                <div id="online-users-display" class="flex-grow flex items-center justify-center w-full">
+                    <!-- JS will populate this -->
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Loading View -->
+    <!-- Loading Screen -->
     <div id="loading-view" class="hidden sky-background w-full h-full flex-col items-center justify-center text-center p-6">
         <div class="sun-loader mb-8"> <div class="sun-body"></div> <div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div> </div>
         <h2 class="text-3xl font-semibold text-white text-shadow">กำลังค้นหาเพื่อน...</h2>
         <button id="cancel-search-btn" class="mt-12 bg-white/30 hover:bg-white/50 backdrop-blur-sm text-white font-bold py-3 px-8 rounded-full transition duration-300">ยกเลิก</button>
     </div>
 
-    <!-- Chat View -->
+    <!-- Chat Screen -->
     <div id="chat-view" class="hidden w-full h-full bg-black relative">
         <video id="remote-video" autoplay playsinline></video>
         <div id="local-video-container"> <video id="local-video" autoplay playsinline muted></video> </div>
         <div class="absolute bottom-6 w-full flex items-center justify-center space-x-6 z-30">
-            <button id="stop-btn" class="themed-btn w-16 h-16 bg-red-500 hover:bg-red-600"></button>
-            <button id="next-btn" class="themed-btn w-20 h-20"></button>
+            <button id="stop-btn" class="themed-btn w-16 h-16 bg-red-500 hover:bg-red-600">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-telephone-fill text-white" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.28 1.465l-.413 1.239a.63.63 0 0 0 .317.792l.402.202a1.75 1.75 0 0 0 2.056-.577l1.405-1.405a.63.63 0 0 0 .292-.415l.23-1.015c.12-.52.569-.924 1.09-1.135l.934-.337a.63.63 0 0 0 .42-.626V1.321a1.745 1.745 0 0 1 1.052-1.664h.004a1.745 1.745 0 0 1 1.744 1.744v.002a.63.63 0 0 0 .627.42l.933.337c.521.21.97.615 1.09 1.135l.23 1.015a.63.63 0 0 0 .292.415l1.405 1.405a1.75 1.75 0 0 0 2.056.577l.402-.202a.63.63 0 0 0 .317-.792l-.414-1.24a.97.97 0 0 1 .28-1.465l1.752-2.296a1.745 1.745 0 0 1 2.61-.163l.636.563a1.745 1.745 0 0 1-1.664 1.052h-.004a1.745 1.745 0 0 1-1.744-1.744v-.002a.63.63 0 0 0-.627-.42l-.933-.337a.97.97 0 0 1-1.09-1.135l-.23-1.015a.63.63 0 0 0-.292-.415L9.98 1.71a1.75 1.75 0 0 0-2.056-.577l-.402.202a.63.63 0 0 0-.317.792l.414 1.24a.97.97 0 0 1-.28 1.465L5.01 6.29c-.423.329-.974.445-1.465.28l-1.239-.414a.63.63 0 0 0-.792.317l-.202.402a1.75 1.75 0 0 0 .577 2.056l1.405 1.405a.63.63 0 0 0 .415.292l1.015.23c.52.12.924.569 1.135 1.09l.337.934a.63.63 0 0 0 .626.42h.004a1.745 1.745 0 0 1 1.664 1.052l-.563.636a1.745 1.745 0 0 1-1.052-1.664v-.002a.63.63 0 0 0-.42-.627l-.337-.933a.97.97 0 0 1-1.135-1.09l-1.015-.23a.63.63 0 0 0-.415-.292L2.98 6.29a1.75 1.75 0 0 0-.577-2.056l-.202-.402a.63.63 0 0 0-.792.317l-.414 1.239c-.165.49-.62.86-1.12.965l-.934.198a1.745 1.745 0 0 1-1.895-.886z"/></svg>
+            </button>
+            <button id="next-btn" class="themed-btn w-20 h-20">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-arrow-right text-white" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"/></svg>
+            </button>
         </div>
     </div>
 
@@ -108,17 +123,14 @@
 
         let localStream, currentCall, peer, userId;
         let searchTimeout;
-        let allCountries = [];
-        let countryData = { nameMap: new Map(), onlineUsers: new Map() };
-        let settings = { myCountry: 'TH', partnerCountry: 'worldwide' };
-        let selectorUpdaters = {};
+        let onlineUsers = new Map();
 
         const presenceCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/presence`);
 
         const ui = {
             settingsView: document.getElementById('settings-view'), loadingView: document.getElementById('loading-view'),
             chatView: document.getElementById('chat-view'), startBtn: document.getElementById('start-btn'),
-            saveSettingsBtn: document.getElementById('save-settings-btn'), cancelSearchBtn: document.getElementById('cancel-search-btn'),
+            cancelSearchBtn: document.getElementById('cancel-search-btn'),
             stopBtn: document.getElementById('stop-btn'), nextBtn: document.getElementById('next-btn'),
             localVideo: document.getElementById('local-video'), remoteVideo: document.getElementById('remote-video'),
             userIdDisplay: document.getElementById('user-id-display'), alertModal: document.getElementById('alert-modal'),
@@ -126,146 +138,24 @@
             onlineUsersDisplay: document.getElementById('online-users-display'),
         };
         
-        const setCookie = (name, value) => { document.cookie = `${name}=${value || ""}; path=/; max-age=31536000; SameSite=Lax`; };
-        const getCookie = (name) => { const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)'); return v ? v[2] : null; };
         const showAlert = (message) => { ui.alertModalMessage.textContent = message; ui.alertModal.classList.add('flex'); ui.alertModal.classList.remove('hidden'); };
-        const getFlagEmoji = (countryCode) => {
-            if (countryCode === 'worldwide') return '🌍';
-            return countryCode ? countryCode.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397)) : '🌐';
-        }
 
-        function createCustomSelector(containerId, options) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            const btn = container.querySelector('.selector-btn');
-            
-            if (!btn.querySelector('.selector-label')) {
-                const labelSpan = document.createElement('span');
-                labelSpan.className = 'selector-label flex items-center';
-                const arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                arrowSvg.setAttribute('class', 'selector-arrow w-5 h-5 text-gray-400 transition-transform duration-300');
-                arrowSvg.setAttribute('fill', 'none');
-                arrowSvg.setAttribute('viewBox', '0 0 24 24');
-                arrowSvg.setAttribute('stroke', 'currentColor');
-                arrowSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />';
-                btn.append(labelSpan, arrowSvg);
-
-                const panelDiv = document.createElement('div');
-                panelDiv.className = 'custom-selector-panel glass-panel p-2 shadow-xl hidden';
-                panelDiv.innerHTML = `<div class="relative p-2"><input type="text" placeholder="ค้นหา..." class="selector-search w-full pl-4 pr-4 py-2 glass-input text-gray-200 focus:ring-0" /></div><ul class="selector-list max-h-60 overflow-y-auto"></ul>`;
-                container.appendChild(panelDiv);
-            }
-            
-            const label = container.querySelector('.selector-label');
-            const arrow = container.querySelector('.selector-arrow');
-            const panel = container.querySelector('.custom-selector-panel');
-            const searchInput = container.querySelector('.selector-search');
-            const list = container.querySelector('.selector-list');
-
-            const updateSelectionDisplay = (value) => {
-                const country = allCountries.find(c => c.alpha2 === value) || { name: 'ทั่วโลก', alpha2: 'worldwide' };
-                label.innerHTML = `<span class="text-xl mr-3">${getFlagEmoji(country.alpha2)}</span> ${country.name}`;
-            };
-
-            const renderList = (filter = '') => {
-                list.innerHTML = '';
-                const lowerFilter = filter.toLowerCase();
-                let currentCountries = options.isPartner ? [{ name: '🌍 ทั่วโลก', alpha2: 'worldwide', enName: 'Worldwide' }, ...allCountries] : allCountries;
-                
-                const filtered = currentCountries.filter(c => 
-                    c.name.toLowerCase().includes(lowerFilter) || 
-                    (c.enName && c.enName.toLowerCase().includes(lowerFilter)) ||
-                    c.alpha2.toLowerCase().includes(lowerFilter)
-                );
-
-                if (filtered.length === 0) {
-                    list.innerHTML = `<li class="p-3 text-center text-gray-400">ไม่พบประเทศ</li>`;
-                    return;
-                }
-
-                filtered.forEach(country => {
-                    const li = document.createElement('li');
-                    li.className = 'p-3 flex items-center rounded-lg cursor-pointer hover:bg-white/10 transition-colors text-gray-200';
-                    li.dataset.value = country.alpha2;
-                    li.innerHTML = `<span class="text-xl mr-3">${getFlagEmoji(country.alpha2)}</span> ${country.name}`;
-                    list.appendChild(li);
-                });
-            };
-
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isHidden = panel.classList.contains('hidden');
-                document.querySelectorAll('.custom-selector-panel').forEach(p => p.classList.add('hidden'));
-                if(isHidden) {
-                    panel.classList.remove('hidden');
-                    arrow.classList.add('rotate-180');
-                    renderList();
-                    searchInput.focus();
-                } else {
-                    arrow.classList.remove('rotate-180');
-                }
-            });
-
-            searchInput.addEventListener('keyup', () => renderList(searchInput.value));
-
-            list.addEventListener('click', (e) => {
-                const li = e.target.closest('li');
-                if (li && li.dataset.value) {
-                    const newValue = li.dataset.value;
-                    options.setter(newValue);
-                    updateSelectionDisplay(newValue);
-                    panel.classList.add('hidden');
-                    arrow.classList.remove('rotate-180');
-                }
-            });
-            
-            selectorUpdaters[containerId] = () => updateSelectionDisplay(options.getter());
-            selectorUpdaters[containerId]();
-        }
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.relative')) {
-                document.querySelectorAll('.custom-selector-panel').forEach(p => p.classList.add('hidden'));
-                document.querySelectorAll('.selector-arrow').forEach(a => a.classList.remove('rotate-180'));
-            }
-        });
-
-        async function loadCountries() {
-            try {
-                const response = await fetch('https://raw.githubusercontent.com/ponlawat-w/country-list-th/refs/heads/master/country-list-th.json');
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                allCountries = await response.json();
-                allCountries.sort((a, b) => a.name.localeCompare(b.name, 'th'));
-                countryData.nameMap = new Map(allCountries.map(c => [c.alpha2, c.name]));
-                
-                settings.myCountry = getCookie("myCountry") || 'TH';
-                settings.partnerCountry = getCookie("partnerCountry") || 'worldwide';
-
-                createCustomSelector('my-country-selector', { getter: () => settings.myCountry, setter: (v) => settings.myCountry = v, isPartner: false });
-                createCustomSelector('partner-country-selector', { getter: () => settings.partnerCountry, setter: (v) => settings.partnerCountry = v, isPartner: true });
-
-            } catch (error) {
-                console.error("Could not load country list:", error);
-                showAlert("ไม่สามารถโหลดรายชื่อประเทศได้");
-            }
-        }
-        
         const updatePresence = async (status, peerId = null) => {
             if (!userId) return;
-            const data = { status, country: settings.myCountry, last_seen: serverTimestamp() };
+            const data = { status, last_seen: serverTimestamp() };
             if (peerId) data.peerId = peerId;
             await setDoc(doc(presenceCollection, userId), data, { merge: true });
         };
         
         const listenForOnlineUsers = () => {
             onSnapshot(query(presenceCollection, where("status", "in", ["online", "waiting"])), (snapshot) => {
-                countryData.onlineUsers = new Map(snapshot.docs.map(d => [d.id, d.data()]));
+                onlineUsers = new Map(snapshot.docs.map(d => [d.id, d.data()]));
                 displayOnlineUsers();
             });
         };
         
         const displayOnlineUsers = () => {
-            const onlineCount = countryData.onlineUsers.size > 0 ? Array.from(countryData.onlineUsers.keys()).filter(id => id !== userId).length : 0;
+            const onlineCount = onlineUsers.size > 0 ? Array.from(onlineUsers.keys()).filter(id => id !== userId).length : 0;
             const displayDiv = ui.onlineUsersDisplay;
 
             if (onlineCount <= 0) {
@@ -279,8 +169,6 @@
             ui.loadingView.style.display = 'none';
             ui.chatView.style.display = 'none';
             ui.settingsView.style.display = 'flex';
-            if (selectorUpdaters['my-country-selector']) selectorUpdaters['my-country-selector']();
-            if (selectorUpdaters['partner-country-selector']) selectorUpdaters['partner-country-selector']();
         };
 
         const hangUp = async (findNext = false) => {
@@ -316,10 +204,10 @@
 
             await updatePresence('waiting', peer.id);
 
-            searchTimeout = setTimeout(() => { showAlert("ไม่พบผู้ใช้งานในขณะนี้ กรุณาลองใหม่อีกครั้ง"); hangUp(false); }, 30000);
+            searchTimeout = setTimeout(() => { showAlert("ไม่พบผู้ใช้งานในขณะนี้ กรุณาลองใหม่อีกครั้ง"); hangUp(false); }, 20000); // 20 seconds
             
-            const availablePeers = Array.from(countryData.onlineUsers.entries())
-                .filter(([id, data]) => id !== userId && (settings.partnerCountry === 'worldwide' || data.country === settings.partnerCountry));
+            const availablePeers = Array.from(onlineUsers.entries())
+                .filter(([id, data]) => id !== userId && data.status === 'waiting');
 
             if (availablePeers.length > 0) {
                 const [partnerUserId, partnerData] = availablePeers[Math.floor(Math.random() * availablePeers.length)];
@@ -378,29 +266,17 @@
         });
 
         ui.alertModalClose.addEventListener('click', () => ui.alertModal.classList.add('hidden'));
-        ui.saveSettingsBtn.addEventListener('click', () => {
-            setCookie("myCountry", settings.myCountry);
-            setCookie("partnerCountry", settings.partnerCountry);
-            updatePresence('online', peer.id);
-            const btn = ui.saveSettingsBtn;
-            btn.textContent = 'บันทึกแล้ว!';
-            btn.classList.remove('bg-indigo-500', 'hover:bg-indigo-600');
-            btn.classList.add('bg-green-500');
-            setTimeout(() => {
-                btn.textContent = 'บันทึกการตั้งค่า';
-                btn.classList.add('bg-indigo-500', 'hover:bg-indigo-600');
-                btn.classList.remove('bg-green-500');
-            }, 2000);
-        });
+        // Remove save settings button as it's no longer there
+        // ui.saveSettingsBtn.addEventListener('click', ...);
         ui.startBtn.addEventListener('click', startSearch);
         ui.nextBtn.addEventListener('click', () => hangUp(true));
         ui.stopBtn.addEventListener('click', () => hangUp(false));
         ui.cancelSearchBtn.addEventListener('click', () => hangUp(false));
         window.addEventListener('beforeunload', () => updatePresence('offline'));
-        document.addEventListener('visibilitychange', () => updatePresence(document.visibilityState === 'hidden' ? 'offline' : 'online', peer.id));
+        document.addEventListener('visibilitychange', () => updatePresence(document.visibilityState === 'hidden' ? 'offline' : 'online', peer?.id));
 
         window.onload = () => { 
-            loadCountries(); 
+            // No need for loadCountries or theme management on load
         };
 
     </script>
