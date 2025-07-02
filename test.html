@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Video Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror effect */
+        }
+        #local-video-container {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            width: 25%;
+            max-width: 150px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 2px solid white;
+            z-index: 10;
+        }
+        .loader {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-800 text-white h-screen w-screen flex items-center justify-center overflow-hidden">
+
+    <!-- Start View -->
+    <div id="start-view" class="text-center">
+        <h1 class="text-4xl font-bold mb-8">เว็บทดสอบ</h1>
+        <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-10 rounded-full text-2xl transition-transform active:scale-95 shadow-lg">
+            หาคู่
+        </button>
+    </div>
+
+    <!-- Loading View -->
+    <div id="loading-view" class="hidden text-center">
+        <div class="loader mx-auto"></div>
+        <p class="mt-4 text-lg">กำลังค้นหา...</p>
+    </div>
+
+    <!-- Chat View -->
+    <div id="chat-view" class="hidden w-full h-full bg-black relative">
+        <video id="remote-video" autoplay playsinline></video>
+        <div id="local-video-container">
+            <video id="local-video" autoplay playsinline muted></video>
+        </div>
+        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+            <button id="next-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform active:scale-95 shadow-lg">
+                ถัดไป
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, getDocs, onSnapshot, updateDoc, deleteDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+        // --- Firebase Config (ใช้ตัวเดียวกับเว็บหลัก) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAyLE1l-eiPPW-fJIvL2uULmDWXcKRhoEM",
+            authDomain: "sunday-tv-videocall.firebaseapp.com",
+            projectId: "sunday-tv-videocall",
+            storageBucket: "sunday-tv-videocall.firebasestorage.app",
+            messagingSenderId: "456379728267",
+            appId: "1:456379728267:web:815ef8f00b815e42172f8e",
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- ตัวแปรและค่าคงที่ ---
+        let localStream, peerConnection, currentRoomId, userId, unsubscribeRoom;
+        const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
+        const roomsCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/rooms`);
+        
+        // --- UI Elements ---
+        const startView = document.getElementById('start-view');
+        const loadingView = document.getElementById('loading-view');
+        const chatView = document.getElementById('chat-view');
+        const startBtn = document.getElementById('start-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const localVideo = document.getElementById('local-video');
+        const remoteVideo = document.getElementById('remote-video');
+
+        // --- การยืนยันตัวตน ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                startBtn.disabled = false;
+                startBtn.textContent = 'หาคู่';
+            } else {
+                signInAnonymously(auth).catch(err => console.error("Sign-in failed", err));
+            }
+        });
+        
+        // --- ฟังก์ชันหลัก ---
+        const hangUp = async (findNext = false) => {
+            if (localStream) localStream.getTracks().forEach(track => track.stop());
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            if (unsubscribeRoom) unsubscribeRoom();
+
+            if (currentRoomId) {
+                try { await deleteDoc(doc(db, roomsCollection.path, currentRoomId)); } catch (e) {}
+            }
+
+            localStream = currentRoomId = unsubscribeRoom = null;
+            if (remoteVideo) remoteVideo.srcObject = null;
+            if (localVideo) localVideo.srcObject = null;
+
+            if (findNext) {
+                await startSearch();
+            } else {
+                chatView.style.display = 'none';
+                loadingView.style.display = 'none';
+                startView.style.display = 'block';
+            }
+        };
+        
+        const startSearch = async () => {
+            startView.style.display = 'none';
+            loadingView.style.display = 'block';
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+            } catch (error) {
+                alert("กรุณาอนุญาตให้เข้าถึงกล้องและไมโครโฟน");
+                hangUp(false);
+                return;
+            }
+
+            const q = query(roomsCollection, where("status", "==", "waiting"));
+            const querySnapshot = await getDocs(q);
+            
+            let roomFound = false;
+            for (const roomDoc of querySnapshot.docs) {
+                if (roomDoc.data().offererId !== userId) {
+                    await joinRoom(roomDoc.id, roomDoc.data().offer);
+                    roomFound = true;
+                    break;
+                }
+            }
+
+            if (!roomFound) {
+                await createRoom();
+            }
+        };
+
+        const createRoom = async () => {
+            peerConnection = new RTCPeerConnection(servers);
+            registerPeerConnectionListeners();
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            
+            const roomRef = await addDoc(roomsCollection, {
+                offer: { type: offer.type, sdp: offer.sdp },
+                offererId: userId,
+                status: 'waiting',
+                createdAt: serverTimestamp(),
+            });
+            currentRoomId = roomRef.id;
+
+            unsubscribeRoom = onSnapshot(roomRef, async (snapshot) => {
+                const data = snapshot.data();
+                if (peerConnection && data && data.answer && !peerConnection.currentRemoteDescription) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                }
+            });
+
+            const answerCandidatesCollection = collection(db, roomRef.path, 'answerCandidates');
+            onSnapshot(answerCandidatesCollection, (snapshot) => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added' && peerConnection && peerConnection.signalingState !== 'closed') {
+                        peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                    }
+                });
+            });
+        };
+
+        const joinRoom = async (roomId, offer) => {
+            currentRoomId = roomId;
+            peerConnection = new RTCPeerConnection(servers);
+            registerPeerConnectionListeners();
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            
+            const roomRef = doc(db, roomsCollection.path, currentRoomId);
+            await updateDoc(roomRef, { 
+                answer: { type: answer.type, sdp: answer.sdp },
+                status: 'connected'
+            });
+
+            const offerCandidatesCollection = collection(db, roomRef.path, 'offerCandidates');
+            onSnapshot(offerCandidatesCollection, (snapshot) => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added' && peerConnection && peerConnection.signalingState !== 'closed') {
+                        peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                    }
+                });
+            });
+        };
+
+        function registerPeerConnectionListeners() {
+            peerConnection.onicecandidate = event => {
+                if (event.candidate && currentRoomId) {
+                    const candidatesCollectionPath = peerConnection.currentRemoteDescription ? 'answerCandidates' : 'offerCandidates';
+                    addDoc(collection(db, roomsCollection.path, currentRoomId, candidatesCollectionPath), event.candidate.toJSON());
+                }
+            };
+
+            peerConnection.ontrack = event => {
+                loadingView.style.display = 'none';
+                chatView.style.display = 'block';
+                remoteVideo.srcObject = event.streams[0];
+            };
+
+            peerConnection.onconnectionstatechange = () => {
+                if (peerConnection && ['disconnected', 'failed', 'closed'].includes(peerConnection.connectionState)) {
+                    hangUp(true); // Automatically find next partner
+                }
+            };
+        }
+
+        // --- Event Listeners ---
+        startBtn.addEventListener('click', startSearch);
+        nextBtn.addEventListener('click', () => hangUp(true));
+        window.addEventListener('beforeunload', () => hangUp(false));
+
+    </script>
+</body>
+</html>
