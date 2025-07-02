@@ -15,12 +15,37 @@
         .glass-panel { background: rgba(30, 41, 59, 0.25); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
         .glass-input { background: rgba(51, 65, 85, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 0.75rem; transition: all 0.2s ease; }
         .glass-input:focus { background: rgba(71, 85, 105, 0.6); border-color: rgba(99, 102, 241, 0.8); box-shadow: none; outline: none; }
-        .custom-selector-panel { position: absolute; z-index: 50; top: 100%; left: 0; right: 0; margin-top: 0.5rem; animation: fadeIn 0.3s ease-out; }
-        #remote-video, #local-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        #remote-video { background-color: #111; }
-        #local-video-container { position: absolute; width: 30%; max-width: 140px; aspect-ratio: 3 / 4; border-radius: 1rem; overflow: hidden; border: 3px solid rgba(255, 255, 255, 0.8); box-shadow: 0 8px 20px rgba(0,0,0,0.25); z-index: 20; transition: all 0.3s ease-in-out; }
-        @media (orientation: portrait) { #local-video-container { bottom: 8rem; left: 50%; transform: translateX(-50%); } }
-        @media (orientation: landscape) { #local-video-container { bottom: auto; left: auto; top: 50%; right: calc(20rem + 1.5rem); /* Adjust for chat panel */ } }
+        
+        /* --- New Split-Screen Layout --- */
+        .video-container { display: flex; width: 100%; height: 100%; }
+        .video-wrapper { position: relative; overflow: hidden; background-color: #111; }
+        .video-player { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .nickname-overlay { position: absolute; bottom: 1rem; left: 1rem; background: rgba(0,0,0,0.5); padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; color: white; }
+        
+        /* Portrait: Top/Bottom Split */
+        @media (orientation: portrait) {
+            .video-container { flex-direction: column; }
+            .video-wrapper { width: 100%; height: 50%; }
+        }
+        /* Landscape: Left/Right Split */
+        @media (orientation: landscape) {
+            .video-container { flex-direction: row; }
+            .video-wrapper { width: 50%; height: 100%; }
+        }
+
+        /* --- Floating Chat --- */
+        #floating-chat-container {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            width: 320px;
+            max-height: 50vh;
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Other Styles --- */
         .themed-btn { border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #FFC107; box-shadow: 0 4px 10px rgba(0,0,0,0.2), inset 0 -4px 6px rgba(0,0,0,0.1); transition: all 0.2s ease-in-out; }
         .themed-btn:hover { transform: scale(1.1); background-color: #FFD54F; }
         .sun-loader { width: 80px; height: 80px; position: relative; animation: spin 10s linear infinite; }
@@ -38,8 +63,12 @@
     <div id="profile-modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <div class="glass-panel p-8 w-full max-w-md text-center">
             <h2 class="text-3xl font-bold text-white mb-2">สร้างโปรไฟล์ของคุณ</h2>
-            <p class="text-gray-400 mb-8">ข้อมูลนี้จะช่วยให้เราหาเพื่อนที่เหมาะสมกับคุณ</p>
+            <p class="text-gray-400 mb-8">ข้อมูลนี้จะแสดงให้เพื่อนของคุณเห็น</p>
             <div class="space-y-4 text-left">
+                <div>
+                    <label for="nickname-input" class="block mb-1 text-sm font-medium text-gray-300">ชื่อเล่น</label>
+                    <input type="text" id="nickname-input" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="ใส่ชื่อเล่นของคุณ">
+                </div>
                 <div>
                     <label for="age-input" class="block mb-1 text-sm font-medium text-gray-300">อายุ</label>
                     <input type="number" id="age-input" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="เช่น 25">
@@ -47,17 +76,11 @@
                 <div>
                     <label for="gender-select" class="block mb-1 text-sm font-medium text-gray-300">เพศ</label>
                     <select id="gender-select" class="w-full p-3 glass-input text-gray-200 focus:ring-0">
-                        <option>ชาย</option>
-                        <option>หญิง</option>
-                        <option>LGBTQ</option>
-                        <option>สาวหล่อ</option>
-                        <option>เกย์</option>
-                        <option>กำหนดเอง</option>
-                        <option>ไม่ระบุ</option>
+                        <option>ชาย</option> <option>หญิง</option> <option>LGBTQ</option> <option>สาวหล่อ</option> <option>เกย์</option> <option>กำหนดเอง</option> <option>ไม่ระบุ</option>
                     </select>
                 </div>
             </div>
-            <button id="save-profile-btn" class="w-full mt-8 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-200 active:scale-95 shadow-md">ดำเนินการต่อ</button>
+            <button id="save-profile-btn" class="w-full mt-8 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-200 active:scale-95 shadow-md">บันทึกและเริ่มใช้งาน</button>
         </div>
     </div>
 
@@ -69,17 +92,7 @@
             <div class="glass-panel p-8 w-full lg:w-2/3 flex flex-col items-center">
                 <img src="https://img2.pic.in.th/pic/sunday-TV.png" alt="Sunday TV Logo" class="w-48 h-auto mb-4 drop-shadow-lg" onerror="this.style.display='none'">
                 <p class="text-gray-300 mb-6">พบเพื่อนใหม่ใต้ท้องฟ้า</p>
-                <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div id="my-country-selector" class="relative">
-                        <label class="block mb-1 text-sm font-medium text-gray-300">ประเทศของคุณ</label>
-                        <button type="button" class="selector-btn w-full p-3 glass-input text-gray-200 flex items-center justify-between"></button>
-                    </div>
-                    <div id="partner-country-selector" class="relative">
-                        <label class="block mb-1 text-sm font-medium text-gray-300">ค้นหาเพื่อนจาก</label>
-                         <button type="button" class="selector-btn w-full p-3 glass-input text-gray-200 flex items-center justify-between"></button>
-                    </div>
-                </div>
-                <button id="start-btn" class="w-full mt-8 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-4 px-4 rounded-xl text-2xl transition-transform duration-200 active:scale-95 shadow-lg" disabled>เริ่มค้นหา!</button>
+                <button id="start-btn" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-4 px-4 rounded-xl text-2xl transition-transform duration-200 active:scale-95 shadow-lg" disabled>เริ่มค้นหา!</button>
                 <div id="user-id-display" class="mt-4 text-xs text-gray-400 text-center"></div>
             </div>
             <div class="glass-panel p-8 w-full lg:w-1/3 flex flex-col items-center justify-center">
@@ -97,25 +110,39 @@
     </div>
 
     <!-- Chat View -->
-    <div id="chat-view" class="hidden w-full h-full bg-black relative flex">
-        <div class="flex-grow h-full relative">
-            <video id="remote-video" autoplay playsinline></video>
-            <div id="local-video-container"> <video id="local-video" autoplay playsinline muted></video> </div>
-        </div>
-        <div id="chat-panel" class="w-80 h-full bg-gray-900/80 backdrop-blur-sm border-l border-gray-700 flex flex-col">
-            <div class="p-4 border-b border-gray-700">
-                <p class="text-white font-bold">แชท</p>
-                <p id="partner-info" class="text-xs text-gray-400">กำลังเชื่อมต่อ...</p>
+    <div id="chat-view" class="hidden w-full h-full bg-black relative">
+        <div class="video-container">
+            <div class="video-wrapper">
+                <video id="remote-video" class="video-player" autoplay playsinline></video>
+                <div id="partner-nickname-display" class="nickname-overlay">คู่สนทนา</div>
             </div>
-            <div id="messages" class="flex-grow p-4 space-y-4 overflow-y-auto"></div>
-            <div class="p-4 border-t border-gray-700">
+            <div class="video-wrapper">
+                <video id="local-video" class="video-player" autoplay playsinline muted></video>
+                <div id="my-nickname-display" class="nickname-overlay">คุณ</div>
+            </div>
+        </div>
+
+        <div id="floating-chat-container" class="glass-panel flex flex-col">
+            <div class="p-3 border-b border-white/10 flex-shrink-0">
+                <p id="partner-info" class="text-xs text-gray-300">กำลังเชื่อมต่อ...</p>
+            </div>
+            <div id="messages" class="flex-grow p-3 space-y-3 overflow-y-auto"></div>
+            <div class="p-2 border-t border-white/10 flex-shrink-0">
                 <div class="flex gap-2">
-                    <input type="text" id="chat-input" class="flex-grow p-2 glass-input text-gray-200" placeholder="พิมพ์ข้อความ...">
+                    <input type="text" id="chat-input" class="flex-grow p-2 glass-input text-gray-200 text-sm" placeholder="พิมพ์ข้อความ...">
                     <button id="send-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold p-3 rounded-lg flex-shrink-0">ส่ง</button>
                 </div>
             </div>
         </div>
-        <div class="absolute bottom-6 left-[calc(50%-10rem)] -translate-x-1/2 z-30 flex items-center justify-center space-x-6">
+        
+        <div class="absolute top-4 right-4 z-40">
+            <button id="fullscreen-btn" class="p-3 rounded-full bg-black/30 hover:bg-black/50 transition-colors">
+                <svg id="fullscreen-enter-icon" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" /></svg>
+                <svg id="fullscreen-exit-icon" class="w-6 h-6 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 4H4v6m0-6l6 6m10 10h-6v-6m0 6l-6-6m-4-4h6v6m-6-6l6 6m10 10v-6h-6m6 6l-6-6" /></svg>
+            </button>
+        </div>
+
+        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center justify-center space-x-6">
             <button id="stop-btn" class="themed-btn w-16 h-16 bg-red-500 hover:bg-red-600">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-telephone-fill text-white" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.28 1.465l-.413 1.239a.63.63 0 0 0 .317.792l.402.202a1.75 1.75 0 0 0 2.056-.577l1.405-1.405a.63.63 0 0 0 .292-.415l.23-1.015c.12-.52.569-.924 1.09-1.135l.934-.337a.63.63 0 0 0 .42-.626V1.321a1.745 1.745 0 0 1 1.052-1.664h.004a1.745 1.745 0 0 1 1.744 1.744v.002a.63.63 0 0 0 .627.42l.933.337c.521.21.97.615 1.09 1.135l.23 1.015a.63.63 0 0 0 .292.415l1.405 1.405a1.75 1.75 0 0 0 2.056.577l.402-.202a.63.63 0 0 0 .317-.792l-.414-1.24a.97.97 0 0 1 .28-1.465l1.752-2.296a1.745 1.745 0 0 1 2.61-.163l.636.563a1.745 1.745 0 0 1-1.664 1.052h-.004a1.745 1.745 0 0 1-1.744-1.744v-.002a.63.63 0 0 0-.627-.42l-.933-.337a.97.97 0 0 1-1.09-1.135l-.23-1.015a.63.63 0 0 0-.292-.415L9.98 1.71a1.75 1.75 0 0 0-2.056-.577l-.402.202a.63.63 0 0 0-.317.792l.414 1.24a.97.97 0 0 1-.28 1.465L5.01 6.29c-.423.329-.974.445-1.465.28l-1.239-.414a.63.63 0 0 0-.792.317l-.202.402a1.75 1.75 0 0 0 .577 2.056l1.405 1.405a.63.63 0 0 0 .415.292l1.015.23c.52.12.924.569 1.135 1.09l.337.934a.63.63 0 0 0 .626.42h.004a1.745 1.745 0 0 1 1.664 1.052l-.563.636a1.745 1.745 0 0 1-1.052-1.664v-.002a.63.63 0 0 0-.42-.627l-.337-.933a.97.97 0 0 1-1.135-1.09l-1.015-.23a.63.63 0 0 0-.415-.292L2.98 6.29a1.75 1.75 0 0 0-.577-2.056l-.202-.402a.63.63 0 0 0-.792.317l-.414 1.239c-.165.49-.62.86-1.12.965l-.934.198a1.745 1.745 0 0 1-1.895-.886z"/></svg>
             </button>
@@ -153,16 +180,15 @@
 
         let localStream, currentCall, currentDataConnection, peer, userId;
         let searchTimeout, heartbeatInterval;
-        let allCountries = [];
         let onlineUsers = new Map();
-        let settings = { myCountry: 'TH', partnerCountry: 'worldwide', age: '', gender: '' };
-        let selectorUpdaters = {};
+        let settings = { nickname: '', age: '', gender: '' };
 
         const presenceCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/presence`);
 
         const ui = {
-            profileModal: document.getElementById('profile-modal'), ageInput: document.getElementById('age-input'),
-            genderSelect: document.getElementById('gender-select'), saveProfileBtn: document.getElementById('save-profile-btn'),
+            profileModal: document.getElementById('profile-modal'), nicknameInput: document.getElementById('nickname-input'),
+            ageInput: document.getElementById('age-input'), genderSelect: document.getElementById('gender-select'),
+            saveProfileBtn: document.getElementById('save-profile-btn'),
             settingsView: document.getElementById('settings-view'), loadingView: document.getElementById('loading-view'),
             chatView: document.getElementById('chat-view'), startBtn: document.getElementById('start-btn'),
             cancelSearchBtn: document.getElementById('cancel-search-btn'),
@@ -171,140 +197,24 @@
             userIdDisplay: document.getElementById('user-id-display'), alertModal: document.getElementById('alert-modal'),
             alertModalMessage: document.getElementById('alert-modal-message'), alertModalClose: document.getElementById('alert-modal-close'),
             onlineUsersDisplay: document.getElementById('online-users-display'),
+            myNicknameDisplay: document.getElementById('my-nickname-display'),
+            partnerNicknameDisplay: document.getElementById('partner-nickname-display'),
             chatPanel: {
-                messages: document.getElementById('messages'),
-                input: document.getElementById('chat-input'),
-                sendBtn: document.getElementById('send-btn'),
-                partnerInfo: document.getElementById('partner-info'),
-            }
+                messages: document.getElementById('messages'), input: document.getElementById('chat-input'),
+                sendBtn: document.getElementById('send-btn'), partnerInfo: document.getElementById('partner-info'),
+            },
+            fullscreenBtn: document.getElementById('fullscreen-btn'),
+            fullscreenEnterIcon: document.getElementById('fullscreen-enter-icon'),
+            fullscreenExitIcon: document.getElementById('fullscreen-exit-icon'),
         };
         
         const setCookie = (name, value) => { document.cookie = `${name}=${value || ""}; path=/; max-age=31536000; SameSite=Lax`; };
         const getCookie = (name) => { const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)'); return v ? v[2] : null; };
         const showAlert = (message) => { ui.alertModalMessage.textContent = message; ui.alertModal.classList.add('flex'); ui.alertModal.classList.remove('hidden'); };
-        const getFlagEmoji = (countryCode) => {
-            if (countryCode === 'worldwide') return '🌍';
-            return countryCode ? countryCode.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397)) : '🌐';
-        }
-
-        function createCustomSelector(containerId, options) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            const btn = container.querySelector('.selector-btn');
-            
-            if (!btn.querySelector('.selector-label')) {
-                const labelSpan = document.createElement('span');
-                labelSpan.className = 'selector-label flex items-center';
-                const arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                arrowSvg.setAttribute('class', 'selector-arrow w-5 h-5 text-gray-400 transition-transform duration-300');
-                arrowSvg.setAttribute('fill', 'none');
-                arrowSvg.setAttribute('viewBox', '0 0 24 24');
-                arrowSvg.setAttribute('stroke', 'currentColor');
-                arrowSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />';
-                btn.append(labelSpan, arrowSvg);
-
-                const panelDiv = document.createElement('div');
-                panelDiv.className = 'custom-selector-panel glass-panel p-2 shadow-xl hidden';
-                panelDiv.innerHTML = `<div class="relative p-2"><input type="text" placeholder="ค้นหา..." class="selector-search w-full pl-4 pr-4 py-2 glass-input text-gray-200 focus:ring-0" /></div><ul class="selector-list max-h-60 overflow-y-auto"></ul>`;
-                container.appendChild(panelDiv);
-            }
-            
-            const label = container.querySelector('.selector-label');
-            const arrow = container.querySelector('.selector-arrow');
-            const panel = container.querySelector('.custom-selector-panel');
-            const searchInput = container.querySelector('.selector-search');
-            const list = container.querySelector('.selector-list');
-
-            const updateSelectionDisplay = (value) => {
-                const country = allCountries.find(c => c.alpha2 === value) || { name: 'ทั่วโลก', alpha2: 'worldwide' };
-                label.innerHTML = `<span class="text-xl mr-3">${getFlagEmoji(country.alpha2)}</span> ${country.name}`;
-            };
-
-            const renderList = (filter = '') => {
-                list.innerHTML = '';
-                const lowerFilter = filter.toLowerCase();
-                let currentCountries = options.isPartner ? [{ name: '🌍 ทั่วโลก', alpha2: 'worldwide', enName: 'Worldwide' }, ...allCountries] : allCountries;
-                
-                const filtered = currentCountries.filter(c => 
-                    c.name.toLowerCase().includes(lowerFilter) || 
-                    (c.enName && c.enName.toLowerCase().includes(lowerFilter)) ||
-                    c.alpha2.toLowerCase().includes(lowerFilter)
-                );
-
-                if (filtered.length === 0) {
-                    list.innerHTML = `<li class="p-3 text-center text-gray-400">ไม่พบประเทศ</li>`;
-                    return;
-                }
-
-                filtered.forEach(country => {
-                    const li = document.createElement('li');
-                    li.className = 'p-3 flex items-center rounded-lg cursor-pointer hover:bg-white/10 transition-colors text-gray-200';
-                    li.dataset.value = country.alpha2;
-                    li.innerHTML = `<span class="text-xl mr-3">${getFlagEmoji(country.alpha2)}</span> ${country.name}`;
-                    list.appendChild(li);
-                });
-            };
-
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isHidden = panel.classList.contains('hidden');
-                document.querySelectorAll('.custom-selector-panel').forEach(p => p.classList.add('hidden'));
-                if(isHidden) {
-                    panel.classList.remove('hidden');
-                    arrow.classList.add('rotate-180');
-                    renderList();
-                    searchInput.focus();
-                } else {
-                    arrow.classList.remove('rotate-180');
-                }
-            });
-
-            searchInput.addEventListener('keyup', () => renderList(searchInput.value));
-
-            list.addEventListener('click', (e) => {
-                const li = e.target.closest('li');
-                if (li && li.dataset.value) {
-                    const newValue = li.dataset.value;
-                    options.setter(newValue);
-                    updateSelectionDisplay(newValue);
-                    panel.classList.add('hidden');
-                    arrow.classList.remove('rotate-180');
-                }
-            });
-            
-            selectorUpdaters[containerId] = () => updateSelectionDisplay(options.getter());
-            selectorUpdaters[containerId]();
-        }
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.relative')) {
-                document.querySelectorAll('.custom-selector-panel').forEach(p => p.classList.add('hidden'));
-                document.querySelectorAll('.selector-arrow').forEach(a => a.classList.remove('rotate-180'));
-            }
-        });
-
-        async function loadCountries() {
-            try {
-                const response = await fetch('https://raw.githubusercontent.com/ponlawat-w/country-list-th/refs/heads/master/country-list-th.json');
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                allCountries = await response.json();
-                allCountries.sort((a, b) => a.name.localeCompare(b.name, 'th'));
-                
-                settings.myCountry = getCookie("myCountry") || 'TH';
-                settings.partnerCountry = getCookie("partnerCountry") || 'worldwide';
-
-                createCustomSelector('my-country-selector', { getter: () => settings.myCountry, setter: (v) => settings.myCountry = v, isPartner: false });
-                createCustomSelector('partner-country-selector', { getter: () => settings.partnerCountry, setter: (v) => settings.partnerCountry = v, isPartner: true });
-
-            } catch (error) {
-                console.error("Could not load country list:", error);
-                showAlert("ไม่สามารถโหลดรายชื่อประเทศได้");
-            }
-        }
         
         const updatePresence = async (status, peerId = null) => {
             if (!userId) return;
-            const data = { status, last_seen: serverTimestamp(), age: settings.age, gender: settings.gender, country: settings.myCountry };
+            const data = { status, last_seen: serverTimestamp(), ...settings };
             if (peerId) data.peerId = peerId;
             await setDoc(doc(presenceCollection, userId), data, { merge: true });
         };
@@ -344,8 +254,6 @@
             ui.loadingView.style.display = 'none';
             ui.chatView.style.display = 'none';
             ui.settingsView.style.display = 'flex';
-            if (selectorUpdaters['my-country-selector']) selectorUpdaters['my-country-selector']();
-            if (selectorUpdaters['partner-country-selector']) selectorUpdaters['partner-country-selector']();
         };
 
         const hangUp = async (findNext = false) => {
@@ -368,10 +276,11 @@
         
         const switchToChatView = (stream) => {
             ui.loadingView.style.display = 'none';
-            ui.chatView.style.display = 'flex';
+            ui.chatView.style.display = 'block';
             ui.remoteVideo.srcObject = stream;
             ui.chatPanel.messages.innerHTML = '';
             ui.chatPanel.partnerInfo.textContent = 'กำลังรอข้อมูลโปรไฟล์...';
+            ui.partnerNicknameDisplay.textContent = 'คู่สนทนา';
         };
 
         const startSearch = async () => {
@@ -418,13 +327,13 @@
 
         const handleDataConnection = (conn) => {
             conn.on('open', () => {
-                conn.send({ type: 'profile', payload: { age: settings.age, gender: settings.gender, country: settings.myCountry } });
+                conn.send({ type: 'profile', payload: settings });
             });
             conn.on('data', (data) => {
                 if (data.type === 'profile') {
-                    const { age, gender, country } = data.payload;
-                    const countryName = allCountries.find(c => c.alpha2 === country)?.name || country;
-                    ui.chatPanel.partnerInfo.textContent = `คุยกับ: เพศ ${gender}, อายุ ${age}, จาก ${countryName}`;
+                    const { nickname, age, gender } = data.payload;
+                    ui.chatPanel.partnerInfo.textContent = `คุยกับ: เพศ ${gender}, อายุ ${age}`;
+                    ui.partnerNicknameDisplay.textContent = nickname || 'คู่สนทนา';
                 } else if (data.type === 'chat') {
                     appendMessage(data.payload, 'partner');
                 }
@@ -491,33 +400,57 @@
         });
 
         const checkProfile = () => {
+            settings.nickname = getCookie('userNickname');
             settings.age = getCookie('userAge');
             settings.gender = getCookie('userGender');
-            if (!settings.age || !settings.gender) {
+            if (!settings.nickname || !settings.age || !settings.gender) {
                 ui.profileModal.classList.remove('hidden');
                 ui.profileModal.classList.add('flex');
             } else {
                 ui.settingsView.classList.remove('hidden');
                 ui.settingsView.classList.add('flex');
+                ui.myNicknameDisplay.textContent = settings.nickname;
             }
         };
 
         ui.saveProfileBtn.addEventListener('click', () => {
+            const nickname = ui.nicknameInput.value.trim();
             const age = ui.ageInput.value;
             const gender = ui.genderSelect.value;
-            if (!age || isNaN(age) || age < 13) {
-                showAlert('กรุณาใส่อายุที่ถูกต้อง (13 ปีขึ้นไป)');
-                return;
-            }
+            if (!nickname) { showAlert('กรุณาใส่ชื่อเล่น'); return; }
+            if (!age || isNaN(age) || age < 13) { showAlert('กรุณาใส่อายุที่ถูกต้อง (13 ปีขึ้นไป)'); return; }
+            
+            settings.nickname = nickname;
             settings.age = age;
             settings.gender = gender;
+            setCookie('userNickname', nickname);
             setCookie('userAge', age);
             setCookie('userGender', gender);
+
             ui.profileModal.classList.add('hidden');
             ui.settingsView.classList.remove('hidden');
             ui.settingsView.classList.add('flex');
+            ui.myNicknameDisplay.textContent = nickname;
             updatePresence('online', peer?.id);
         });
+        
+        const toggleFullscreen = () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.error(err));
+            } else {
+                document.exitFullscreen();
+            }
+        };
+
+        const updateFullscreenIcon = () => {
+            if (document.fullscreenElement) {
+                ui.fullscreenEnterIcon.classList.add('hidden');
+                ui.fullscreenExitIcon.classList.remove('hidden');
+            } else {
+                ui.fullscreenEnterIcon.classList.remove('hidden');
+                ui.fullscreenExitIcon.classList.add('hidden');
+            }
+        };
 
         ui.alertModalClose.addEventListener('click', () => ui.alertModal.classList.add('hidden'));
         ui.startBtn.addEventListener('click', startSearch);
@@ -526,10 +459,18 @@
         ui.cancelSearchBtn.addEventListener('click', () => hangUp(false));
         ui.chatPanel.sendBtn.addEventListener('click', sendChatMessage);
         ui.chatPanel.input.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendChatMessage(); });
-        window.addEventListener('beforeunload', () => { clearInterval(heartbeatInterval); if(peer && !peer.destroyed) peer.destroy(); updatePresence('offline'); });
+        ui.fullscreenBtn.addEventListener('click', toggleFullscreen);
+        document.addEventListener('fullscreenchange', updateFullscreenIcon);
+        window.addEventListener('beforeunload', () => {
+            clearInterval(heartbeatInterval);
+            if(peer && !peer.destroyed) {
+                peer.destroy();
+            }
+            // The updatePresence('offline') might not run reliably here, 
+            // but the heartbeat system on other clients will handle removing this user.
+        });
 
         window.onload = () => { 
-            loadCountries(); 
             checkProfile();
         };
 
