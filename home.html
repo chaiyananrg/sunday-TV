@@ -3,757 +3,319 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sunday TV - วิดีโอแชทแบบสุ่ม</title>
-    <link rel="icon" href="https://img2.pic.in.th/pic/sunday-TV.png">
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-
+    <title>Sunday TV - พบปะเพื่อนใหม่ทั่วโลก</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
-        /* --- General Styles & Theme --- */
-        :root {
-            --primary-color: #3498db;
-            --secondary-color: #2980b9;
-            --text-color: #ffffff;
-            --dark-text: #333;
-            --danger-color: #e74c3c;
-            --success-color: #2ecc71;
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; font-family: 'Mitr', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background-color: #0c0a18;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        .screen {
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease, visibility 0.5s;
         }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #87CEEB 0%, #B2FFFF 100%);
-            color: var(--dark-text);
-            overflow: hidden;
+        .hidden {
+            opacity: 0; visibility: hidden; pointer-events: none;
         }
-
-        /* --- Home Screen --- */
         #home-screen {
-            display: flex;
+            background-image: radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 0%), radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%), radial-gradient(at 75% 2%, hsla(257, 98%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 10% 29%, hsla(256, 96%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 0.1) 0px, transparent 50%), radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 0.1) 0px, transparent 50%), radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 0.1) 0px, transparent 50%);
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
-            padding: 20px;
-            text-align: center;
         }
-
-        .logo-container img {
-            max-width: 250px;
-            margin-bottom: 2rem;
-        }
-
-        .profile-settings {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            width: 100%;
-            max-width: 350px;
-            margin-bottom: 1.5rem;
-        }
-
-        .profile-settings input, .select-wrapper {
-            width: 100%;
-        }
-
-        input[type="text"], select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid rgba(255, 255, 255, 0.7);
-            border-radius: 25px;
-            background-color: rgba(255, 255, 255, 0.9);
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        input[type="text"]:focus, select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
-        }
-
-        .select-wrapper {
-            position: relative;
-        }
-
-        .select-wrapper::after {
-            content: '▼';
-            font-size: 1rem;
-            color: var(--primary-color);
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            pointer-events: none;
-        }
-
-        select {
-            appearance: none;
-            -webkit-appearance: none;
-        }
-
-        #start-button {
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 30px;
-            border: none;
-            cursor: pointer;
-            background-color: var(--primary-color);
-            color: var(--text-color);
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        #start-button:hover:not(:disabled) {
-            background-color: var(--secondary-color);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-        }
-
-        #start-button:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-
-        /* Video Preview */
-        .video-preview-container {
-            width: 200px;
-            height: 150px;
-            background: #000;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 1.5rem;
-            display: none; /* Hidden by default */
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-
-        #local-video-preview {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
-
-        /* --- Chat Screen --- */
         #chat-screen {
-            width: 100vw;
-            height: 100vh;
-            background-color: #000;
+            position: fixed; top: 0; left: 0; background-color: #000;
+            /* Default to column (mobile), switch to row on large screens */
+            flex-direction: column;
+        }
+        @media (min-width: 1024px) { /* lg breakpoint */
+            #chat-screen {
+                flex-direction: row;
+            }
+        }
+        .video-container {
             position: relative;
-            display: none;
+            overflow: hidden;
+            background-color: #1a1a1a;
         }
-
-        #remote-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
+        video {
+            width: 100%; height: 100%; object-fit: cover;
         }
-
-        #local-video-pip {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 25vw;
-            max-width: 280px;
-            min-width: 120px;
-            border-radius: 10px;
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            object-fit: cover;
-            transform: scaleX(-1);
-            z-index: 10;
+        #localVideo, #local-preview-video {
+             transform: scaleX(-1); /* Mirror local video */
         }
-
-        /* Waiting Overlay */
-        #waiting-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: var(--text-color);
-            font-size: 1.5rem;
-            z-index: 20;
+        #chat-controls {
+            position: absolute; bottom: 32px; left: 50%;
+            transform: translateX(-50%); display: flex; gap: 1.5rem;
+            padding: 12px; background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px); border-radius: 999px;
         }
-
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 5px solid rgba(255, 255, 255, 0.3);
-            border-top-color: var(--text-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
+        .control-btn {
+            width: 72px; height: 72px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; color: white; border: none; cursor: pointer;
+            transition: all 0.2s;
         }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Controls */
-        #controls {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 1rem;
-            z-index: 30;
-        }
-
-        #controls button {
-            padding: 15px 30px;
-            font-size: 1rem;
-            font-weight: bold;
-            border-radius: 50px;
-            border: none;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-        #controls button:hover {
-            transform: scale(1.05);
-        }
-
-        #next-button {
-            background-color: var(--primary-color);
-            color: var(--text-color);
-        }
-
-        #stop-button {
-            background-color: var(--danger-color);
-            color: var(--text-color);
-        }
-
-        /* --- Cookie Consent & Notices --- */
-        #cookie-consent, #https-notice {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: #34495e;
-            color: var(--text-color);
-            padding: 15px;
-            text-align: center;
-            z-index: 1000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-        }
-
-        #cookie-consent button {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            background-color: var(--primary-color);
-            color: var(--text-color);
-            cursor: pointer;
-        }
-
-        #https-notice {
-            flex-direction: column;
-            top: 0;
-            height: 100vh;
-            background: #ecf0f1;
-            color: var(--dark-text);
-        }
-
-        /* --- Responsive Design --- */
-        @media (max-width: 768px) {
-            .logo-container img {
-                max-width: 200px;
-            }
-            #controls {
-                bottom: 20px;
-            }
-            #local-video-pip {
-                width: 30vw;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .profile-settings {
-                max-width: 90%;
-            }
-            #start-button {
-                width: 90%;
-                max-width: 350px;
-                font-size: 1rem;
-            }
-            #controls {
-                gap: 0.5rem;
-            }
-            #controls button {
-                padding: 12px 24px;
-            }
-            #local-video-pip {
-                width: 35vw;
-                bottom: 15px;
-                right: 15px;
-            }
-            #cookie-consent {
-                flex-direction: column;
-            }
-        }
+        .control-btn:hover { transform: scale(1.1); }
     </style>
 </head>
 <body>
 
-    <!-- หน้าจอหลัก -->
-    <main id="home-screen">
-        <div class="logo-container">
-            <img src="https://img2.pic.in.th/pic/sunday-TV.png" alt="Sunday TV Logo">
+    <!-- Cookie Consent Modal -->
+    <div id="cookie-consent-modal" class="hidden fixed inset-0 bg-black/60 z-50 screen">
+        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md text-center m-4">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">เราใช้คุกกี้เพื่อประสบการณ์ที่ดีขึ้น</h2>
+            <p class="text-gray-600 mb-6">เราใช้คุกกี้เพื่อบันทึกการตั้งค่าของคุณ เช่น ชื่อและประเทศที่เลือก เพื่อให้การใช้งานครั้งถัดไปสะดวกยิ่งขึ้น</p>
+            <button id="accept-cookie-button" class="w-full px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all">ยอมรับและดำเนินการต่อ</button>
         </div>
+    </div>
 
-        <div class="profile-settings">
-            <input type="text" id="user-name" placeholder="ใส่ชื่อของคุณ..." maxlength="20">
-            <div class="select-wrapper">
-                <select id="my-country"></select>
+    <!-- Home Screen -->
+    <div id="home-screen" class="screen p-4">
+        <div class="w-full max-w-lg bg-gray-900/30 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl shadow-2xl text-center">
+            <img src="https://img2.pic.in.th/pic/sunday-TV.png" alt="โลโก้ Sunday TV" class="h-24 w-auto mx-auto mb-4" onerror="this.onerror=null; this.src='https://placehold.co/200x80/ffffff/000000?text=Sunday+TV';">
+            <div class="space-y-4 text-left">
+                <div><label for="userNameInput" class="block text-sm font-medium text-white/80 mb-1">ชื่อของคุณ</label><input type="text" id="userNameInput" placeholder="ใส่ชื่อเล่นของคุณ..." class="w-full p-3 rounded-lg bg-white/10 text-white border-2 border-transparent focus:border-blue-400 focus:ring-0 transition placeholder:text-white/40"></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div><label for="myCountrySelect" class="block text-sm font-medium text-white/80 mb-1">ประเทศของคุณ</label><select id="myCountrySelect" class="w-full p-3 rounded-lg bg-white/10 text-white border-2 border-transparent focus:border-blue-400 focus:ring-0 transition custom-select"></select></div>
+                    <div><label for="partnerCountrySelect" class="block text-sm font-medium text-white/80 mb-1">คนที่อยากพบ</label><select id="partnerCountrySelect" class="w-full p-3 rounded-lg bg-white/10 text-white border-2 border-transparent focus:border-blue-400 focus:ring-0 transition custom-select"></select></div>
+                </div>
             </div>
-            <div class="select-wrapper">
-                <select id="partner-country"></select>
-            </div>
+            <div id="local-preview-container" class="hidden w-48 h-36 mx-auto mt-6 rounded-2xl overflow-hidden"><video id="local-preview-video" class="w-full h-full" autoplay playsinline muted></video></div>
+            <p id="home-status" class="text-white/70 mt-6 h-6"></p>
+            <button id="permission-button" class="mt-4 w-full px-10 py-4 bg-white text-xl font-semibold text-gray-800 rounded-full shadow-lg hover:bg-gray-200 transition-all transform hover:scale-105"><i class="fa-solid fa-camera mr-3"></i>อนุญาตให้ใช้กล้อง</button>
+            <button id="start-chat-button" class="hidden mt-4 w-full px-10 py-4 bg-gradient-to-r from-green-400 to-blue-500 text-xl font-semibold text-white rounded-full shadow-lg hover:from-green-500 hover:to-blue-600 transition-all transform hover:scale-105"><i class="fa-solid fa-play mr-3"></i>เริ่มแชท</button>
+            <div class="mt-8 text-white/50 text-xs"><p>แชร์ลิงก์ให้เพื่อน:</p><div class="mt-1 flex items-center justify-center bg-black/20 rounded-full p-1"><span id="website-url" class="px-3 truncate"></span><button id="copy-url-button" class="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-full text-white flex-shrink-0">คัดลอก</button></div></div>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chat-screen" class="screen hidden">
+        <!-- Remote Video Container (Top / Right) -->
+        <div id="remote-video-container" class="video-container w-full h-1/2 lg:w-1/2 lg:h-full">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div id="waiting-overlay" class="absolute inset-0 flex flex-col items-center justify-center text-white text-xl bg-black bg-opacity-50 z-20"><i class="fa-solid fa-satellite-dish text-5xl mb-4 animate-pulse"></i><p>กำลังค้นหาเพื่อนคุย...</p></div>
+        </div>
+        <!-- Local Video Container (Bottom / Left) -->
+        <div id="local-video-container" class="video-container w-full h-1/2 lg:w-1/2 lg:h-full">
+            <video id="localVideo" autoplay playsinline muted></video>
         </div>
         
-        <div class="video-preview-container">
-            <video id="local-video-preview" autoplay muted playsinline></video>
+        <!-- Controls are overlaid on top of the whole screen -->
+        <div id="chat-controls" class="z-30">
+            <button id="next-button" class="control-btn bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/50"><i class="fa-solid fa-forward-step"></i></button>
+            <button id="stop-button" class="control-btn bg-red-600 hover:bg-red-700 shadow-lg shadow-red-600/50"><i class="fa-solid fa-phone-slash"></i></button>
         </div>
-
-        <button id="start-button" disabled>กรอกข้อมูลโปรไฟล์ให้ครบ</button>
-    </main>
-
-    <!-- หน้าจอแชท -->
-    <section id="chat-screen" style="display: none;">
-        <video id="remote-video" autoplay playsinline></video>
-        <video id="local-video-pip" autoplay muted playsinline></video>
-
-        <div id="waiting-overlay">
-            <div class="spinner"></div>
-            <p>กำลังค้นหาเพื่อนคุย...</p>
-        </div>
-
-        <div id="controls">
-            <button id="next-button">คนถัดไป</button>
-            <button id="stop-button">หยุด</button>
-        </div>
-    </section>
+    </div>
     
-    <!-- Pop-up คุกกี้ -->
-    <div id="cookie-consent">
-        <p>เราใช้คุกกี้เพื่อบันทึกการตั้งค่าของคุณและปรับปรุงประสบการณ์การใช้งาน</p>
-        <button id="accept-cookies">ยอมรับ</button>
-    </div>
+    <!-- Error Overlay -->
+    <div id="error-overlay" class="hidden fixed inset-0 screen bg-gray-800/90 z-50 p-8 text-center"><div class="max-w-md"><h2 id="error-title" class="text-4xl font-bold text-red-500 mb-4"></h2><p id="error-message" class="text-xl text-white/90 mb-6"></p><button onclick="window.location.reload()" class="px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg">ลองอีกครั้ง</button></div></div>
 
-    <!-- แจ้งเตือน HTTPS -->
-    <div id="https-notice" style="display: none;">
-        <h1>ข้อผิดพลาด 🔒</h1>
-        <p>Sunday TV ต้องการการเชื่อมต่อที่ปลอดภัย (HTTPS) เพื่อใช้งานกล้องและไมโครโฟน</p>
-        <p>กรุณาตรวจสอบให้แน่ใจว่าคุณกำลังเข้าถึงเว็บไซต์ผ่าน URL ที่ขึ้นต้นด้วย `https://`</p>
-    </div>
-
-    <script>
-        'use strict';
-
-        // ตรวจสอบ HTTPS ก่อนเริ่มทำงาน
-        if (window.location.protocol !== 'https:') {
-            document.getElementById('home-screen').style.display = 'none';
-            document.getElementById('https-notice').style.display = 'flex';
-            // หยุดการทำงานของสคริปต์ทั้งหมดหากไม่ใช่ HTTPS
-            throw new Error("Sunday TV requires HTTPS. The app will not run.");
-        }
-
-        // --- การตั้งค่า Firebase ---
-        // วาง Firebase Config ของคุณที่นี่
-        const firebaseConfig = {
-          // PASTE YOUR FIREBASE CONFIG OBJECT HERE
-          // ตัวอย่าง:
-          // apiKey: "AIza....",
-          // authDomain: "your-project.firebaseapp.com",
-          // projectId: "your-project",
-          // storageBucket: "your-project.appspot.com",
-          // messagingSenderId: "...",
-          // appId: "1:..."
+    <script type="module">
+        const ui = {
+            homeScreen: document.getElementById('home-screen'),
+            chatScreen: document.getElementById('chat-screen'),
+            cookieModal: document.getElementById('cookie-consent-modal'),
+            acceptCookieBtn: document.getElementById('accept-cookie-button'),
+            permissionBtn: document.getElementById('permission-button'),
+            startChatBtn: document.getElementById('start-chat-button'),
+            homeStatus: document.getElementById('home-status'),
+            previewContainer: document.getElementById('local-preview-container'),
+            previewVideo: document.getElementById('local-preview-video'),
+            userNameInput: document.getElementById('userNameInput'),
+            myCountrySelect: document.getElementById('myCountrySelect'),
+            partnerCountrySelect: document.getElementById('partnerCountrySelect'),
+            remoteVideo: document.getElementById('remoteVideo'),
+            localVideo: document.getElementById('localVideo'),
+            waitingOverlay: document.getElementById('waiting-overlay'),
+            nextBtn: document.getElementById('next-button'),
+            stopBtn: document.getElementById('stop-button'),
+            errorOverlay: document.getElementById('error-overlay'),
+            errorTitle: document.getElementById('error-title'),
+            errorMessage: document.getElementById('error-message'),
+            websiteUrl: document.getElementById('website-url'),
+            copyUrlBtn: document.getElementById('copy-url-button'),
         };
 
-        // ตรวจสอบว่า firebaseConfig ถูกต้องหรือไม่
-        if (!firebaseConfig || !firebaseConfig.projectId) {
-            alert("[ข้อผิดพลาด] กรุณาตั้งค่า Firebase config ในไฟล์ script.js ให้ถูกต้อง");
-            throw new Error("Firebase config is not set correctly.");
+        function showScreen(screen) { ui.homeScreen.classList.add('hidden'); ui.chatScreen.classList.add('hidden'); screen.classList.remove('hidden'); }
+        function displayError(title, message) { ui.errorTitle.textContent = title; ui.errorMessage.textContent = message; ui.errorOverlay.classList.remove('hidden'); }
+        
+        function setCookie(name, value, days) { let expires = ""; if (days) { const date = new Date(); date.setTime(date.getTime() + (days*24*60*60*1000)); expires = "; expires=" + date.toUTCString(); } document.cookie = name + "=" + (value || "")  + expires + "; path=/; SameSite=Lax"; }
+        function getCookie(name) { const nameEQ = name + "="; const ca = document.cookie.split(';'); for(let i=0; i < ca.length; i++) { let c = ca[i]; while (c.charAt(0)==' ') c = c.substring(1,c.length); if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length); } return null; }
+
+        if (!window.isSecureContext) { displayError('การเชื่อมต่อไม่ปลอดภัย', 'เบราว์เซอร์ต้องการ HTTPS ที่ปลอดภัยเพื่อใช้งานกล้องและไมโครโฟน'); }
+        else if (typeof __firebase_config === 'undefined' || !__firebase_config) { displayError('การตั้งค่าไม่สมบูรณ์', 'ไม่พบการตั้งค่าที่จำเป็นสำหรับเชื่อมต่อกับเซิร์ฟเวอร์'); }
+        else {
+            if (getCookie("cookieConsent") !== "true") { ui.cookieModal.classList.remove('hidden'); } 
+            else { initialize(); }
+        }
+        
+        ui.acceptCookieBtn.onclick = () => { setCookie("cookieConsent", "true", 365); ui.cookieModal.classList.add('hidden'); initialize(); };
+
+        let initializeApp, getAuth, signInAnonymously, onAuthStateChanged;
+        let getFirestore, doc, collection, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs, addDoc;
+        let db, auth, localStream, peerConnection, currentRoomId, userId;
+        let roomUnsubscribe, candidatesUnsubscribe;
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        const roomsCollectionPath = `artifacts/${appId}/public/data/rooms`;
+        const countries = [ { code: 'TH', name: 'ไทย' }, { code: 'US', name: 'สหรัฐอเมริกา' }, { code: 'JP', name: 'ญี่ปุ่น' }, { code: 'KR', name: 'เกาหลีใต้' }, { code: 'GB', name: 'สหราชอาณาจักร' }, { code: 'DE', name: 'เยอรมนี' }, { code: 'FR', name: 'ฝรั่งเศส' }, { code: 'CN', name: 'จีน' }, { code: 'IN', name: 'อินเดีย' }, { code: 'BR', name: 'บราซิล' }, { code: 'RU', name: 'รัสเซีย' }, { code: 'AU', name: 'ออสเตรเลีย' }, { code: 'CA', name: 'แคนาดา' }, { code: 'VN', name: 'เวียดนาม' }, { code: 'ID', name: 'อินโดนีเซีย' } ];
+
+        function populateCountries() {
+            countries.forEach(c => { ui.myCountrySelect.add(new Option(c.name, c.code)); });
+            ui.partnerCountrySelect.add(new Option('ทั่วโลก', 'worldwide'));
+            countries.forEach(c => { ui.partnerCountrySelect.add(new Option(c.name, c.code)); });
         }
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const firestore = firebase.firestore();
+        function loadSettings() {
+            ui.userNameInput.value = getCookie("userName") || '';
+            ui.myCountrySelect.value = getCookie("myCountry") || 'TH';
+            ui.partnerCountrySelect.value = getCookie("partnerCountry") || 'worldwide';
+        }
+        
+        function saveSettings() {
+            setCookie("userName", ui.userNameInput.value, 365);
+            setCookie("myCountry", ui.myCountrySelect.value, 365);
+            setCookie("partnerCountry", ui.partnerCountrySelect.value, 365);
+        }
 
-        // --- การตั้งค่า WebRTC ---
-        const servers = {
-            iceServers: [
-                { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
-            ],
-            iceCandidatePoolSize: 10,
+        async function initialize() {
+            populateCountries();
+            loadSettings();
+            ui.websiteUrl.textContent = window.location.hostname;
+            try {
+                ({ initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"));
+                ({ getAuth, signInAnonymously, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"));
+                ({ getFirestore, doc, collection, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs, addDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"));
+                
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                onAuthStateChanged(auth, user => { if (user) { userId = user.uid; } });
+                await signInAnonymously(auth);
+            } catch (error) { displayError('การเชื่อมต่อล้มเหลว', `ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้: ${error.message}`); }
+        }
+
+        ui.permissionBtn.onclick = async () => {
+            if (!ui.userNameInput.value) { ui.homeStatus.textContent = "กรุณาใส่ชื่อของคุณก่อน"; ui.userNameInput.focus(); return; }
+            ui.permissionBtn.disabled = true; ui.homeStatus.textContent = "กำลังขออนุญาต...";
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                ui.previewVideo.srcObject = localStream;
+                ui.previewContainer.classList.remove('hidden');
+                ui.permissionBtn.classList.add('hidden');
+                ui.startChatBtn.classList.remove('hidden');
+                ui.homeStatus.textContent = "กล้องพร้อมใช้งานแล้ว!";
+            } catch (error) { ui.homeStatus.textContent = "โปรดอนุญาตให้เข้าถึงกล้องและไมโครโฟน"; ui.permissionBtn.disabled = false; }
         };
 
-        // --- ตัวแปร Global ---
-        let pc = null;
-        let localStream = null;
-        let roomId = null;
-        let userProfile = { name: '', myCountry: '', partnerCountry: '' };
+        ui.startChatBtn.onclick = async () => {
+            saveSettings();
+            showScreen(ui.chatScreen);
+            ui.localVideo.srcObject = localStream;
+            await findOrCreateRoom();
+        };
 
-        // --- DOM Elements ---
-        const homeScreen = document.getElementById('home-screen');
-        const chatScreen = document.getElementById('chat-screen');
-        const startButton = document.getElementById('start-button');
-        const nextButton = document.getElementById('next-button');
-        const stopButton = document.getElementById('stop-button');
-        const localVideoPreview = document.getElementById('local-video-preview');
-        const localVideoPip = document.getElementById('local-video-pip');
-        const remoteVideo = document.getElementById('remote-video');
-        const waitingOverlay = document.getElementById('waiting-overlay');
-        const userNameInput = document.getElementById('user-name');
-        const myCountrySelect = document.getElementById('my-country');
-        const partnerCountrySelect = document.getElementById('partner-country');
-        const cookieConsent = document.getElementById('cookie-consent');
-        const acceptCookiesButton = document.getElementById('accept-cookies');
-        const videoPreviewContainer = document.querySelector('.video-preview-container');
-
-        // --- รายชื่อประเทศ ---
-        const countries = ["ทั่วโลก", "ไทย", "สหรัฐอเมริกา", "สหราชอาณาจักร", "ญี่ปุ่น", "เกาหลีใต้", "จีน", "ออสเตรเลีย", "แคนาดา", "เยอรมนี", "ฝรั่งเศส"];
-
-        // --- ฟังก์ชันหลัก ---
-
-        document.addEventListener('DOMContentLoaded', () => {
-            populateCountryDropdowns();
-            setupEventListeners();
-            handleCookieLogic();
-            validateProfile();
-        });
-
-        function setupEventListeners() {
-            startButton.addEventListener('click', handleStartButton);
-            nextButton.addEventListener('click', handleNextButton);
-            stopButton.addEventListener('click', handleStopButton);
-            acceptCookiesButton.addEventListener('click', acceptCookieConsent);
-            userNameInput.addEventListener('input', validateProfile);
-            myCountrySelect.addEventListener('change', validateProfile);
-            partnerCountrySelect.addEventListener('change', validateProfile);
-        }
-
-        function handleCookieLogic() {
-            if (getCookie("sundatv_settings_accepted")) {
-                cookieConsent.style.display = 'none';
-                loadSettingsFromCookie();
-            } else {
-                cookieConsent.style.display = 'flex';
-            }
-        }
-
-        function acceptCookieConsent() {
-            setCookie("sundatv_settings_accepted", "true", 365);
-            cookieConsent.style.display = 'none';
-            saveSettingsToCookie();
-        }
-
-        function validateProfile() {
-            userProfile.name = userNameInput.value.trim();
-            userProfile.myCountry = myCountrySelect.value;
-            userProfile.partnerCountry = partnerCountrySelect.value;
-
-            if (userProfile.name && userProfile.myCountry && userProfile.partnerCountry) {
-                startButton.disabled = false;
-                startButton.textContent = 'อนุญาตให้ใช้กล้อง';
-                saveSettingsToCookie();
-            } else {
-                startButton.disabled = true;
-                startButton.textContent = 'กรอกข้อมูลโปรไฟล์ให้ครบ';
-            }
-        }
-
-        async function handleStartButton() {
-            if (!localStream) {
-                // Step 1: Request camera
-                try {
-                    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                    localVideoPreview.srcObject = localStream;
-                    localVideoPip.srcObject = localStream;
-                    videoPreviewContainer.style.display = 'block';
-                    startButton.textContent = 'เริ่มแชท';
-                } catch (error) {
-                    console.error('Error accessing media devices.', error);
-                    alert('ไม่สามารถเข้าถึงกล้องหรือไมโครโฟนได้ กรุณาตรวจสอบการอนุญาต');
-                }
-            } else {
-                // Step 2: Start chat
-                await startChat();
-            }
-        }
-
-        async function startChat() {
-            // UI transition
-            homeScreen.style.display = 'none';
-            chatScreen.style.display = 'block';
-            waitingOverlay.style.display = 'flex';
-            document.documentElement.requestFullscreen().catch(err => {
-              console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        async function findOrCreateRoom() {
+            ui.waitingOverlay.style.display = 'flex';
+            const roomsRef = collection(db, roomsCollectionPath);
+            const partnerCountry = ui.partnerCountrySelect.value;
+            const q = query(roomsRef, where('status', '==', 'waiting'));
+            const querySnapshot = await getDocs(q);
+            const availableRoom = querySnapshot.docs.find(doc => {
+                const data = doc.data();
+                return data.callerId !== userId && (partnerCountry === 'worldwide' || data.country === partnerCountry);
             });
-
-            // Matchmaking logic
-            const roomsRef = firestore.collection('rooms');
-            let query = roomsRef.where('answered', '==', false).where('calleeProfile.myCountry', '==', userProfile.partnerCountry).limit(1);
-
-            if (userProfile.partnerCountry === 'ทั่วโลก') {
-                query = roomsRef.where('answered', '==', false).limit(1);
-            }
-            
-            const snapshot = await query.get();
-
-            if (snapshot.empty) {
-                // No open rooms, create a new one
-                await createRoom();
-            } else {
-                // Join an existing room
-                const roomDoc = snapshot.docs[0];
-                await joinRoom(roomDoc.id, roomDoc.data());
-            }
+            if (availableRoom) { await joinRoom(availableRoom.id, availableRoom.data()); } 
+            else { await createRoom(); }
         }
 
         async function createRoom() {
-            const roomRef = firestore.collection('rooms').doc();
-            roomId = roomRef.id;
+            const roomRef = doc(collection(db, roomsCollectionPath));
+            currentRoomId = roomRef.id;
+            peerConnection = createPeerConnection();
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            await setDoc(roomRef, { callerId: userId, callerName: ui.userNameInput.value, country: ui.myCountrySelect.value, offer: { type: offer.type, sdp: offer.sdp }, status: 'waiting' });
+            listenForAnswer(roomRef);
+        }
 
-            pc = new RTCPeerConnection(servers);
-            registerPeerConnectionListeners();
+        async function joinRoom(roomId, roomData) {
+            currentRoomId = roomId;
+            const roomRef = doc(db, roomsCollectionPath, roomId);
+            peerConnection = createPeerConnection();
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp }, calleeId: userId, calleeName: ui.userNameInput.value, status: 'connected' });
+            listenForIceCandidates(roomRef);
+        }
+        
+        function createPeerConnection() {
+            const pc = new RTCPeerConnection(servers);
+            pc.onicecandidate = e => { if (e.candidate && currentRoomId) { addDoc(collection(db, roomsCollectionPath, currentRoomId, 'candidates'), e.candidate.toJSON()); } };
+            pc.ontrack = e => { if (e.streams && e.streams[0]) { ui.remoteVideo.srcObject = e.streams[0]; ui.waitingOverlay.style.display = 'none'; } };
+            pc.onconnectionstatechange = () => { if (peerConnection && ['disconnected', 'closed', 'failed'].includes(peerConnection.connectionState)) { hangUp(true); } };
+            return pc;
+        }
 
-            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-            // Create offer
-            const offerDescription = await pc.createOffer();
-            await pc.setLocalDescription(offerDescription);
-
-            const offer = {
-                sdp: offerDescription.sdp,
-                type: offerDescription.type,
-            };
-            
-            const callerProfile = {
-                name: userProfile.name,
-                myCountry: userProfile.myCountry,
-            };
-
-            await roomRef.set({ offer, callerProfile, answered: false });
-
-            // Listen for answer
-            roomRef.onSnapshot(async snapshot => {
+        function listenForAnswer(roomRef) {
+            roomUnsubscribe = onSnapshot(roomRef, async (snapshot) => {
                 const data = snapshot.data();
-                if (!pc.currentRemoteDescription && data?.answer) {
-                    const answerDescription = new RTCSessionDescription(data.answer);
-                    await pc.setRemoteDescription(answerDescription);
-                    waitingOverlay.style.display = 'none';
+                if (data && data.answer && peerConnection && !peerConnection.currentRemoteDescription) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    listenForIceCandidates(roomRef);
                 }
             });
-
-            // Listen for ICE candidates from callee
-            const calleeCandidates = roomRef.collection('calleeCandidates');
-            calleeCandidates.onSnapshot(snapshot => {
-                snapshot.docChanges().forEach(change => {
-                    if (change.type === 'added') {
-                        pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                    }
-                });
-            });
         }
-
-        async function joinRoom(id, roomData) {
-            roomId = id;
-            const roomRef = firestore.collection('rooms').doc(roomId);
-
-            pc = new RTCPeerConnection(servers);
-            registerPeerConnectionListeners();
-
-            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-            // Set remote description (offer)
-            const offerDescription = new RTCSessionDescription(roomData.offer);
-            await pc.setRemoteDescription(offerDescription);
-
-            // Create answer
-            const answerDescription = await pc.createAnswer();
-            await pc.setLocalDescription(answerDescription);
-
-            const answer = {
-                type: answerDescription.type,
-                sdp: answerDescription.sdp,
-            };
             
-            const calleeProfile = {
-                name: userProfile.name,
-                myCountry: userProfile.myCountry,
-            };
-
-            await roomRef.update({ answer, answered: true, calleeProfile });
-            waitingOverlay.style.display = 'none';
-
-            // Listen for ICE candidates from caller
-            const callerCandidates = roomRef.collection('callerCandidates');
-            callerCandidates.onSnapshot(snapshot => {
-                snapshot.docChanges().forEach(change => {
-                    if (change.type === 'added') {
-                        pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                    }
+        function listenForIceCandidates(roomRef) {
+            candidatesUnsubscribe = onSnapshot(collection(db, roomsCollectionPath, currentRoomId, 'candidates'), (snapshot) => {
+                snapshot.docChanges().forEach(async (change) => {
+                    if (change.type === 'added' && peerConnection.remoteDescription) { await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); }
                 });
             });
         }
 
-        function registerPeerConnectionListeners() {
-            pc.onicecandidate = event => {
-                if (event.candidate) {
-                    const roomRef = firestore.collection('rooms').doc(roomId);
-                    const isCaller = !pc.currentRemoteDescription; // Rough check
-                    const candidateCollection = isCaller ? 'callerCandidates' : 'calleeCandidates';
-                    roomRef.collection(candidateCollection).add(event.candidate.toJSON());
-                }
-            };
-
-            pc.ontrack = event => {
-                remoteVideo.srcObject = event.streams[0];
-            };
-
-            pc.onconnectionstatechange = () => {
-                if (pc.connectionState === 'disconnected' || pc.connectionState === 'closed' || pc.connectionState === 'failed') {
-                    hangup();
-                }
-            };
+        async function hangUp(isAbrupt = false) {
+             if (roomUnsubscribe) roomUnsubscribe();
+             if (candidatesUnsubscribe) candidatesUnsubscribe();
+             if (peerConnection) { peerConnection.close(); peerConnection = null; }
+             
+             if (currentRoomId) { await deleteDoc(doc(db, roomsCollectionPath, currentRoomId)).catch(console.error); currentRoomId = null; }
+            
+             if (!isAbrupt) {
+                if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
+                ui.remoteVideo.srcObject = null;
+                ui.previewVideo.srcObject = null;
+                ui.previewContainer.classList.add('hidden');
+                ui.startChatBtn.classList.add('hidden');
+                ui.permissionBtn.classList.remove('hidden');
+                ui.permissionBtn.disabled = false;
+                showScreen(ui.homeScreen);
+             }
         }
-
-        async function hangup() {
-            if (pc) {
-                pc.close();
-                pc = null;
-            }
-
-            // Stop all tracks for both local video elements
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-
-            remoteVideo.srcObject = null;
-            localVideoPreview.srcObject = null;
-            localVideoPip.srcObject = null;
-
-            // Clean up Firestore
-            if (roomId) {
-                const roomRef = firestore.collection('rooms').doc(roomId);
-                const calleeCandidates = await roomRef.collection('calleeCandidates').get();
-                calleeCandidates.forEach(async candidate => await candidate.ref.delete());
-                const callerCandidates = await roomRef.collection('callerCandidates').get();
-                callerCandidates.forEach(async candidate => await candidate.ref.delete());
-                await roomRef.delete();
-                roomId = null;
-            }
-
-            // UI reset
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            }
-            chatScreen.style.display = 'none';
-            homeScreen.style.display = 'flex';
-            videoPreviewContainer.style.display = 'none';
-            startButton.textContent = 'อนุญาตให้ใช้กล้อง';
-        }
-
-        function handleNextButton() {
-            hangup();
-            // Re-initiate the start process automatically
-            setTimeout(() => {
-               handleStartButton();
-            }, 100);
-        }
-
-        function handleStopButton() {
-            hangup();
-        }
-
-        // --- Helper Functions ---
-        function populateCountryDropdowns() {
-            countries.forEach(country => {
-                const option1 = new Option(country === "ทั่วโลก" ? "ประเทศของฉัน" : country, country);
-                const option2 = new Option(country === "ทั่วโลก" ? "คนที่อยากพบ (ทั่วโลก)" : country, country);
-                if (country === "ทั่วโลก") {
-                     option1.disabled = true;
-                     option1.selected = true;
-                     option2.value = "ทั่วโลก";
-                }
-                myCountrySelect.add(option1);
-                partnerCountrySelect.add(option2);
+        
+        ui.stopBtn.onclick = () => hangUp(false);
+        ui.nextBtn.onclick = async () => { await hangUp(true); await findOrCreateRoom(); };
+        ui.copyUrlBtn.onclick = () => {
+            const urlToCopy = "https://" + ui.websiteUrl.textContent;
+            navigator.clipboard.writeText(urlToCopy).then(() => {
+                ui.copyUrlBtn.textContent = "คัดลอกแล้ว!";
+                setTimeout(() => { ui.copyUrlBtn.textContent = "คัดลอก"; }, 2000);
+            }).catch(err => {
+                console.error('Could not copy text: ', err);
             });
-            myCountrySelect.selectedIndex = 0; // Placeholder
-            partnerCountrySelect.value = 'ทั่วโลก';
-        }
-
-        function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-                const date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
-            }
-            // Only set cookie if consent is given
-            if (getCookie("sundatv_settings_accepted")) {
-                 document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax; Secure";
-            }
-        }
-
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
-
-        function saveSettingsToCookie() {
-            const settings = {
-                name: userNameInput.value,
-                myCountry: myCountrySelect.value,
-                partnerCountry: partnerCountrySelect.value
-            };
-            setCookie("sundatv_settings", JSON.stringify(settings), 365);
-        }
-
-        function loadSettingsFromCookie() {
-            const settingsCookie = getCookie("sundatv_settings");
-            if (settingsCookie) {
-                try {
-                    const settings = JSON.parse(settingsCookie);
-                    userNameInput.value = settings.name || '';
-                    myCountrySelect.value = settings.myCountry || '';
-                    partnerCountrySelect.value = settings.partnerCountry || 'ทั่วโลก';
-                    validateProfile();
-                } catch(e) {
-                    console.error("Could not parse settings cookie", e);
-                }
-            }
-        }
+        };
     </script>
 </body>
 </html>
