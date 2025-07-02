@@ -3,321 +3,756 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sunday TV - วิดีโอแชทกับเพื่อนใหม่</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Sunday TV - วิดีโอแชทแบบสุ่ม</title>
+    <link rel="icon" href="https://img2.pic.in.th/pic/sunday-TV.png">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
     <style>
+        /* --- General Styles & Theme --- */
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --text-color: #ffffff;
+            --dark-text: #333;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         html, body {
+            width: 100%;
             height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #87CEEB 0%, #B2FFFF 100%);
+            color: var(--dark-text);
+            overflow: hidden;
         }
-        body {
-            font-family: 'Mitr', 'Inter', sans-serif;
-            /* เปลี่ยนพื้นหลังจาก gradient เป็นสีฟ้าโทนเดียวที่สบายตา */
-            background-color: #a0d2eb; 
+
+        /* --- Home Screen --- */
+        #home-screen {
             display: flex;
-            align-items: center;
+            flex-direction: column;
             justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            text-align: center;
         }
-        .video-wrapper {
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+
+        .logo-container img {
+            max-width: 250px;
+            margin-bottom: 2rem;
+        }
+
+        .profile-settings {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+            max-width: 350px;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-settings input, .select-wrapper {
+            width: 100%;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            border-radius: 25px;
+            background-color: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
             transition: all 0.3s ease;
-            aspect-ratio: 4 / 3;
         }
-        .video-wrapper:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
+
+        input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
         }
-        video {
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        .select-wrapper::after {
+            content: '▼';
+            font-size: 1rem;
+            color: var(--primary-color);
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        #start-button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        #start-button:hover:not(:disabled) {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        #start-button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        /* Video Preview */
+        .video-preview-container {
+            width: 200px;
+            height: 150px;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            display: none; /* Hidden by default */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        #local-video-preview {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* Mirror effect */
+            transform: scaleX(-1);
         }
-        .btn-sunny {
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px 0 rgba(252, 165, 3, 0.75);
+
+        /* --- Chat Screen --- */
+        #chat-screen {
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            position: relative;
+            display: none;
         }
-        .btn-sunny:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px 0 rgba(252, 165, 3, 0.85);
+
+        #remote-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
         }
-        .btn-skip {
-             box-shadow: 0 4px 15px 0 rgba(239, 68, 68, 0.5);
+
+        #local-video-pip {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 25vw;
+            max-width: 280px;
+            min-width: 120px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            object-fit: cover;
+            transform: scaleX(-1);
+            z-index: 10;
         }
-        .btn-skip:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px 0 rgba(239, 68, 68, 0.6);
+
+        /* Waiting Overlay */
+        #waiting-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            z-index: 20;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: var(--text-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Controls */
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 30;
+        }
+
+        #controls button {
+            padding: 15px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        #controls button:hover {
+            transform: scale(1.05);
+        }
+
+        #next-button {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+        }
+
+        #stop-button {
+            background-color: var(--danger-color);
+            color: var(--text-color);
+        }
+
+        /* --- Cookie Consent & Notices --- */
+        #cookie-consent, #https-notice {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #34495e;
+            color: var(--text-color);
+            padding: 15px;
+            text-align: center;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #cookie-consent button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        #https-notice {
+            flex-direction: column;
+            top: 0;
+            height: 100vh;
+            background: #ecf0f1;
+            color: var(--dark-text);
+        }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            .logo-container img {
+                max-width: 200px;
+            }
+            #controls {
+                bottom: 20px;
+            }
+            #local-video-pip {
+                width: 30vw;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .profile-settings {
+                max-width: 90%;
+            }
+            #start-button {
+                width: 90%;
+                max-width: 350px;
+                font-size: 1rem;
+            }
+            #controls {
+                gap: 0.5rem;
+            }
+            #controls button {
+                padding: 12px 24px;
+            }
+            #local-video-pip {
+                width: 35vw;
+                bottom: 15px;
+                right: 15px;
+            }
+            #cookie-consent {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
-<body class="p-4">
+<body>
 
-    <!-- Security Warning Container -->
-    <div id="security-warning" class="hidden w-full max-w-2xl p-8 bg-white/70 backdrop-blur-lg border border-white/30 rounded-2xl text-center shadow-2xl">
-        <div class="mx-auto bg-amber-100 h-16 w-16 flex items-center justify-center rounded-full border-4 border-white">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-        </div>
-        <h2 class="text-3xl font-bold text-gray-800 mt-4">การเชื่อมต่อไม่ปลอดภัย</h2>
-        <p class="text-gray-600 mt-2">
-            เพื่อความปลอดภัยของคุณ เบราว์เซอร์จะอนุญาตให้ใช้งานกล้องและไมโครโฟนได้บนเว็บไซต์ที่มีการเชื่อมต่อแบบ <strong class="text-green-600">HTTPS</strong> เท่านั้น
-        </p>
-        <p class="mt-4 text-sm text-gray-500 bg-gray-100 p-3 rounded-lg">
-            แอปพลิเคชันนี้จำเป็นต้องทำงานบนเซิร์ฟเวอร์ที่รองรับ HTTPS เพื่อให้สามารถเริ่มวิดีโอแชทได้
-        </p>
-    </div>
-
-    <!-- Main App Container -->
-    <div id="app-container" class="hidden w-full max-w-7xl mx-auto">
-        <!-- Header with Logo -->
-        <header class="flex flex-col items-center justify-center mb-6 text-center">
-            <!-- อัปเดต URL ของโลโก้ตามที่ร้องขอ -->
-            <img src="https://tv.sunday.work.gd/sunday-TV.png" alt="โลโก้ Sunday TV" class="h-20 w-auto mb-3"
-                 onerror="this.onerror=null; this.src='https://placehold.co/200x80/a0d2eb/FFFFFF?text=Sunday+TV';">
-            <h1 class="text-4xl md:text-5xl font-bold text-white" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">Sunday TV</h1>
-            <p class="text-white text-opacity-90 mt-1">พบปะเพื่อนใหม่ในวันสบายๆ ของคุณ</p>
-        </header>
-
-        <!-- Video streams container -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mb-6">
-            <!-- Remote Video -->
-            <div class="video-wrapper rounded-2xl overflow-hidden relative">
-                <div class="absolute top-3 left-3 bg-black bg-opacity-40 px-3 py-1 rounded-full text-sm text-white font-medium">คู่สนทนา</div>
-                <video id="remoteVideo" autoplay playsinline></video>
-                <div id="waitingMessage" class="absolute inset-0 flex flex-col items-center justify-center text-gray-700 text-lg bg-white bg-opacity-50">
-                    <svg class="animate-spin h-8 w-8 text-blue-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    กำลังค้นหาเพื่อนคุย...
-                </div>
-            </div>
-            <!-- Local Video -->
-            <div class="video-wrapper rounded-2xl overflow-hidden relative">
-                 <div class="absolute top-3 left-3 bg-black bg-opacity-40 px-3 py-1 rounded-full text-sm text-white font-medium">คุณ</div>
-                <video id="localVideo" autoplay playsinline muted></video>
-            </div>
+    <!-- หน้าจอหลัก -->
+    <main id="home-screen">
+        <div class="logo-container">
+            <img src="https://img2.pic.in.th/pic/sunday-TV.png" alt="Sunday TV Logo">
         </div>
 
-        <!-- Controls -->
-        <div class="flex items-center justify-center space-x-4">
-            <button id="startButton" class="btn-sunny bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3 px-8 rounded-full text-lg flex items-center space-x-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg><span>เริ่มเลย</span></button>
-            <button id="nextButton" class="btn-skip bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-full text-lg hidden items-center space-x-2 transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.168V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.832L4.555 5.168z" /></svg><span>ข้าม</span></button>
+        <div class="profile-settings">
+            <input type="text" id="user-name" placeholder="ใส่ชื่อของคุณ..." maxlength="20">
+            <div class="select-wrapper">
+                <select id="my-country"></select>
+            </div>
+            <div class="select-wrapper">
+                <select id="partner-country"></select>
+            </div>
         </div>
         
-        <div id="status" class="text-center text-white text-opacity-80 mt-4 text-sm"></div>
-        <div id="userIdDisplay" class="text-center text-blue-200 mt-2 text-xs break-all"></div>
+        <div class="video-preview-container">
+            <video id="local-video-preview" autoplay muted playsinline></video>
+        </div>
+
+        <button id="start-button" disabled>กรอกข้อมูลโปรไฟล์ให้ครบ</button>
+    </main>
+
+    <!-- หน้าจอแชท -->
+    <section id="chat-screen" style="display: none;">
+        <video id="remote-video" autoplay playsinline></video>
+        <video id="local-video-pip" autoplay muted playsinline></video>
+
+        <div id="waiting-overlay">
+            <div class="spinner"></div>
+            <p>กำลังค้นหาเพื่อนคุย...</p>
+        </div>
+
+        <div id="controls">
+            <button id="next-button">คนถัดไป</button>
+            <button id="stop-button">หยุด</button>
+        </div>
+    </section>
+    
+    <!-- Pop-up คุกกี้ -->
+    <div id="cookie-consent">
+        <p>เราใช้คุกกี้เพื่อบันทึกการตั้งค่าของคุณและปรับปรุงประสบการณ์การใช้งาน</p>
+        <button id="accept-cookies">ยอมรับ</button>
     </div>
 
-    <script type="module">
-        // --- Security Check for HTTPS ---
-        if (window.isSecureContext) {
-            // If connection is secure, show the app and run it.
-            document.getElementById('app-container').style.display = 'block';
-            runApp();
-        } else {
-            // If connection is NOT secure, only show the warning.
-            document.getElementById('security-warning').style.display = 'block';
+    <!-- แจ้งเตือน HTTPS -->
+    <div id="https-notice" style="display: none;">
+        <h1>ข้อผิดพลาด 🔒</h1>
+        <p>Sunday TV ต้องการการเชื่อมต่อที่ปลอดภัย (HTTPS) เพื่อใช้งานกล้องและไมโครโฟน</p>
+        <p>กรุณาตรวจสอบให้แน่ใจว่าคุณกำลังเข้าถึงเว็บไซต์ผ่าน URL ที่ขึ้นต้นด้วย `https://`</p>
+    </div>
+
+    <script>
+        'use strict';
+
+        // ตรวจสอบ HTTPS ก่อนเริ่มทำงาน
+        if (window.location.protocol !== 'https:') {
+            document.getElementById('home-screen').style.display = 'none';
+            document.getElementById('https-notice').style.display = 'flex';
+            // หยุดการทำงานของสคริปต์ทั้งหมดหากไม่ใช่ HTTPS
+            throw new Error("Sunday TV requires HTTPS. The app will not run.");
         }
 
-        async function runApp() {
-            // This function contains all the application logic.
-            // It will only be called if the context is secure.
-            const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-            const { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-            const { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, writeBatch } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        // --- การตั้งค่า Firebase ---
+        // วาง Firebase Config ของคุณที่นี่
+        const firebaseConfig = {
+          // PASTE YOUR FIREBASE CONFIG OBJECT HERE
+          // ตัวอย่าง:
+          // apiKey: "AIza....",
+          // authDomain: "your-project.firebaseapp.com",
+          // projectId: "your-project",
+          // storageBucket: "your-project.appspot.com",
+          // messagingSenderId: "...",
+          // appId: "1:..."
+        };
 
-            // --- DOM Elements ---
-            const localVideo = document.getElementById('localVideo');
-            const remoteVideo = document.getElementById('remoteVideo');
-            const startButton = document.getElementById('startButton');
-            const nextButton = document.getElementById('nextButton');
-            const waitingMessage = document.getElementById('waitingMessage');
-            const statusDiv = document.getElementById('status');
-            const userIdDisplay = document.getElementById('userIdDisplay');
+        // ตรวจสอบว่า firebaseConfig ถูกต้องหรือไม่
+        if (!firebaseConfig || !firebaseConfig.projectId) {
+            alert("[ข้อผิดพลาด] กรุณาตั้งค่า Firebase config ในไฟล์ script.js ให้ถูกต้อง");
+            throw new Error("Firebase config is not set correctly.");
+        }
 
-            // --- Firebase and WebRTC Globals ---
-            let db, auth;
-            let localStream;
-            let peerConnection;
-            let currentRoomId = null;
-            let userId = null;
-            let roomUnsubscribe = null;
-            let candidatesUnsubscribe = null;
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
 
-            // --- Firebase Configuration ---
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-            
-            // --- STUN Servers Configuration ---
-            const servers = {
-                iceServers: [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, ],
-                iceCandidatePoolSize: 10,
-            };
+        // --- การตั้งค่า WebRTC ---
+        const servers = {
+            iceServers: [
+                { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
+            ],
+            iceCandidatePoolSize: 10,
+        };
 
-            // --- Firestore Collection Path ---
-            const roomsCollectionPath = `artifacts/${appId}/public/data/rooms`;
+        // --- ตัวแปร Global ---
+        let pc = null;
+        let localStream = null;
+        let roomId = null;
+        let userProfile = { name: '', myCountry: '', partnerCountry: '' };
 
-            // --- Initialize Firebase and Authentication ---
-            async function initializeFirebase() {
-                try {
-                    const app = initializeApp(firebaseConfig);
-                    db = getFirestore(app);
-                    auth = getAuth(app);
-                    onAuthStateChanged(auth, user => {
-                        if (user) {
-                            userId = user.uid;
-                            userIdDisplay.textContent = `ID: ${userId}`;
-                            startButton.disabled = false;
-                            statusDiv.textContent = "พร้อมที่จะเริ่มแล้ว!";
-                        }
-                    });
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (error) {
-                    console.error("Firebase Initialization Error:", error);
-                    statusDiv.textContent = "เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์";
-                    startButton.disabled = true;
-                }
+        // --- DOM Elements ---
+        const homeScreen = document.getElementById('home-screen');
+        const chatScreen = document.getElementById('chat-screen');
+        const startButton = document.getElementById('start-button');
+        const nextButton = document.getElementById('next-button');
+        const stopButton = document.getElementById('stop-button');
+        const localVideoPreview = document.getElementById('local-video-preview');
+        const localVideoPip = document.getElementById('local-video-pip');
+        const remoteVideo = document.getElementById('remote-video');
+        const waitingOverlay = document.getElementById('waiting-overlay');
+        const userNameInput = document.getElementById('user-name');
+        const myCountrySelect = document.getElementById('my-country');
+        const partnerCountrySelect = document.getElementById('partner-country');
+        const cookieConsent = document.getElementById('cookie-consent');
+        const acceptCookiesButton = document.getElementById('accept-cookies');
+        const videoPreviewContainer = document.querySelector('.video-preview-container');
+
+        // --- รายชื่อประเทศ ---
+        const countries = ["ทั่วโลก", "ไทย", "สหรัฐอเมริกา", "สหราชอาณาจักร", "ญี่ปุ่น", "เกาหลีใต้", "จีน", "ออสเตรเลีย", "แคนาดา", "เยอรมนี", "ฝรั่งเศส"];
+
+        // --- ฟังก์ชันหลัก ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            populateCountryDropdowns();
+            setupEventListeners();
+            handleCookieLogic();
+            validateProfile();
+        });
+
+        function setupEventListeners() {
+            startButton.addEventListener('click', handleStartButton);
+            nextButton.addEventListener('click', handleNextButton);
+            stopButton.addEventListener('click', handleStopButton);
+            acceptCookiesButton.addEventListener('click', acceptCookieConsent);
+            userNameInput.addEventListener('input', validateProfile);
+            myCountrySelect.addEventListener('change', validateProfile);
+            partnerCountrySelect.addEventListener('change', validateProfile);
+        }
+
+        function handleCookieLogic() {
+            if (getCookie("sundatv_settings_accepted")) {
+                cookieConsent.style.display = 'none';
+                loadSettingsFromCookie();
+            } else {
+                cookieConsent.style.display = 'flex';
             }
+        }
 
-            // --- Main Functions ---
-            startButton.onclick = async () => {
+        function acceptCookieConsent() {
+            setCookie("sundatv_settings_accepted", "true", 365);
+            cookieConsent.style.display = 'none';
+            saveSettingsToCookie();
+        }
+
+        function validateProfile() {
+            userProfile.name = userNameInput.value.trim();
+            userProfile.myCountry = myCountrySelect.value;
+            userProfile.partnerCountry = partnerCountrySelect.value;
+
+            if (userProfile.name && userProfile.myCountry && userProfile.partnerCountry) {
+                startButton.disabled = false;
+                startButton.textContent = 'อนุญาตให้ใช้กล้อง';
+                saveSettingsToCookie();
+            } else {
                 startButton.disabled = true;
-                nextButton.disabled = true;
-                statusDiv.textContent = 'กำลังเปิดกล้อง...';
+                startButton.textContent = 'กรอกข้อมูลโปรไฟล์ให้ครบ';
+            }
+        }
+
+        async function handleStartButton() {
+            if (!localStream) {
+                // Step 1: Request camera
                 try {
                     localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                    localVideo.srcObject = localStream;
-                    statusDiv.textContent = 'กำลังค้นหาคู่สนทนา...';
-                    await findOrCreateRoom();
+                    localVideoPreview.srcObject = localStream;
+                    localVideoPip.srcObject = localStream;
+                    videoPreviewContainer.style.display = 'block';
+                    startButton.textContent = 'เริ่มแชท';
                 } catch (error) {
                     console.error('Error accessing media devices.', error);
-                    statusDiv.textContent = 'ไม่สามารถเข้าถึงกล้องหรือไมโครโฟนได้: ' + error.message;
-                    startButton.disabled = false;
+                    alert('ไม่สามารถเข้าถึงกล้องหรือไมโครโฟนได้ กรุณาตรวจสอบการอนุญาต');
+                }
+            } else {
+                // Step 2: Start chat
+                await startChat();
+            }
+        }
+
+        async function startChat() {
+            // UI transition
+            homeScreen.style.display = 'none';
+            chatScreen.style.display = 'block';
+            waitingOverlay.style.display = 'flex';
+            document.documentElement.requestFullscreen().catch(err => {
+              console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+
+            // Matchmaking logic
+            const roomsRef = firestore.collection('rooms');
+            let query = roomsRef.where('answered', '==', false).where('calleeProfile.myCountry', '==', userProfile.partnerCountry).limit(1);
+
+            if (userProfile.partnerCountry === 'ทั่วโลก') {
+                query = roomsRef.where('answered', '==', false).limit(1);
+            }
+            
+            const snapshot = await query.get();
+
+            if (snapshot.empty) {
+                // No open rooms, create a new one
+                await createRoom();
+            } else {
+                // Join an existing room
+                const roomDoc = snapshot.docs[0];
+                await joinRoom(roomDoc.id, roomDoc.data());
+            }
+        }
+
+        async function createRoom() {
+            const roomRef = firestore.collection('rooms').doc();
+            roomId = roomRef.id;
+
+            pc = new RTCPeerConnection(servers);
+            registerPeerConnectionListeners();
+
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            // Create offer
+            const offerDescription = await pc.createOffer();
+            await pc.setLocalDescription(offerDescription);
+
+            const offer = {
+                sdp: offerDescription.sdp,
+                type: offerDescription.type,
+            };
+            
+            const callerProfile = {
+                name: userProfile.name,
+                myCountry: userProfile.myCountry,
+            };
+
+            await roomRef.set({ offer, callerProfile, answered: false });
+
+            // Listen for answer
+            roomRef.onSnapshot(async snapshot => {
+                const data = snapshot.data();
+                if (!pc.currentRemoteDescription && data?.answer) {
+                    const answerDescription = new RTCSessionDescription(data.answer);
+                    await pc.setRemoteDescription(answerDescription);
+                    waitingOverlay.style.display = 'none';
+                }
+            });
+
+            // Listen for ICE candidates from callee
+            const calleeCandidates = roomRef.collection('calleeCandidates');
+            calleeCandidates.onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added') {
+                        pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                    }
+                });
+            });
+        }
+
+        async function joinRoom(id, roomData) {
+            roomId = id;
+            const roomRef = firestore.collection('rooms').doc(roomId);
+
+            pc = new RTCPeerConnection(servers);
+            registerPeerConnectionListeners();
+
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            // Set remote description (offer)
+            const offerDescription = new RTCSessionDescription(roomData.offer);
+            await pc.setRemoteDescription(offerDescription);
+
+            // Create answer
+            const answerDescription = await pc.createAnswer();
+            await pc.setLocalDescription(answerDescription);
+
+            const answer = {
+                type: answerDescription.type,
+                sdp: answerDescription.sdp,
+            };
+            
+            const calleeProfile = {
+                name: userProfile.name,
+                myCountry: userProfile.myCountry,
+            };
+
+            await roomRef.update({ answer, answered: true, calleeProfile });
+            waitingOverlay.style.display = 'none';
+
+            // Listen for ICE candidates from caller
+            const callerCandidates = roomRef.collection('callerCandidates');
+            callerCandidates.onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added') {
+                        pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                    }
+                });
+            });
+        }
+
+        function registerPeerConnectionListeners() {
+            pc.onicecandidate = event => {
+                if (event.candidate) {
+                    const roomRef = firestore.collection('rooms').doc(roomId);
+                    const isCaller = !pc.currentRemoteDescription; // Rough check
+                    const candidateCollection = isCaller ? 'callerCandidates' : 'calleeCandidates';
+                    roomRef.collection(candidateCollection).add(event.candidate.toJSON());
                 }
             };
 
-            async function findOrCreateRoom() {
-                const roomsRef = collection(db, roomsCollectionPath);
-                const q = query(roomsRef, where('status', '==', 'waiting'));
-                const querySnapshot = await getDocs(q);
-                const availableRoom = querySnapshot.docs.find(doc => doc.data().callerId !== userId);
-                if (availableRoom) {
-                    currentRoomId = availableRoom.id;
-                    statusDiv.textContent = `กำลังเข้าร่วมห้อง...`;
-                    await joinRoom(availableRoom.id, availableRoom.data());
-                } else {
-                    statusDiv.textContent = 'สร้างห้องใหม่และรอคู่สนทนา...';
-                    await createRoom();
-                }
-            }
-
-            async function createRoom() {
-                const roomRef = doc(collection(db, roomsCollectionPath));
-                currentRoomId = roomRef.id;
-                peerConnection = createPeerConnection();
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                await setDoc(roomRef, { callerId: userId, offer: { type: offer.type, sdp: offer.sdp }, status: 'waiting', createdAt: new Date() });
-                listenForAnswer(roomRef);
-            }
-
-            async function joinRoom(roomId, roomData) {
-                const roomRef = doc(db, roomsCollectionPath, roomId);
-                peerConnection = createPeerConnection();
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-                await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp }, calleeId: userId, status: 'connected' });
-                listenForIceCandidates(roomRef);
-            }
-
-            function createPeerConnection() {
-                const pc = new RTCPeerConnection(servers);
-                pc.onicecandidate = e => e.candidate && currentRoomId && addDoc(collection(db, roomsCollectionPath, currentRoomId, 'candidates'), e.candidate.toJSON());
-                pc.ontrack = e => {
-                    if (e.streams && e.streams[0]) {
-                        remoteVideo.srcObject = e.streams[0];
-                        waitingMessage.style.display = 'none';
-                        statusDiv.textContent = 'เชื่อมต่อสำเร็จ!';
-                        startButton.classList.add('hidden');
-                        nextButton.classList.remove('hidden');
-                        nextButton.style.display = 'flex';
-                        nextButton.disabled = false;
-                    }
-                };
-                pc.onconnectionstatechange = () => {
-                    if (peerConnection && ['disconnected', 'closed', 'failed'].includes(peerConnection.connectionState)) {
-                        statusDiv.textContent = 'คู่สนทนาตัดการเชื่อมต่อ';
-                        hangUp();
-                    }
-                };
-                return pc;
-            }
-
-            function listenForAnswer(roomRef) {
-                roomUnsubscribe = onSnapshot(roomRef, async (snapshot) => {
-                    const data = snapshot.data();
-                    if (data && data.answer && peerConnection && !peerConnection.currentRemoteDescription) {
-                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                        listenForIceCandidates(roomRef);
-                    }
-                });
-            }
-            
-            function listenForIceCandidates(roomRef) {
-                const candidatesCollection = collection(db, roomsCollectionPath, currentRoomId, 'candidates');
-                candidatesUnsubscribe = onSnapshot(candidatesCollection, (snapshot) => {
-                    snapshot.docChanges().forEach(async (change) => {
-                        if (change.type === 'added' && peerConnection && peerConnection.remoteDescription) {
-                            await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                        }
-                    });
-                });
-            }
-
-            async function hangUp() {
-                if (roomUnsubscribe) roomUnsubscribe();
-                if (candidatesUnsubscribe) candidatesUnsubscribe();
-                if (peerConnection) peerConnection.close();
-                if (localStream) localStream.getTracks().forEach(track => track.stop());
-                if (currentRoomId) {
-                    const roomRef = doc(db, roomsCollectionPath, currentRoomId);
-                    const candidatesSnapshot = await getDocs(collection(roomRef, 'candidates'));
-                    const batch = writeBatch(db);
-                    candidatesSnapshot.forEach(doc => batch.delete(doc.ref));
-                    batch.delete(roomRef);
-                    await batch.commit().catch(console.error);
-                }
-                remoteVideo.srcObject = null;
-                localVideo.srcObject = null;
-                waitingMessage.style.display = 'flex';
-                startButton.classList.remove('hidden');
-                nextButton.classList.add('hidden');
-                startButton.disabled = false;
-                statusDiv.textContent = 'การสนทนาจบลง กด "เริ่มเลย" เพื่อค้นหาใหม่';
-                currentRoomId = null;
-            }
-
-            nextButton.onclick = async () => {
-                nextButton.disabled = true;
-                statusDiv.textContent = 'กำลังค้นหาคนถัดไป...';
-                await hangUp();
-                await startButton.click();
+            pc.ontrack = event => {
+                remoteVideo.srcObject = event.streams[0];
             };
-            
-            window.addEventListener('beforeunload', () => currentRoomId && hangUp());
-            initializeFirebase();
+
+            pc.onconnectionstatechange = () => {
+                if (pc.connectionState === 'disconnected' || pc.connectionState === 'closed' || pc.connectionState === 'failed') {
+                    hangup();
+                }
+            };
+        }
+
+        async function hangup() {
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+
+            // Stop all tracks for both local video elements
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+
+            remoteVideo.srcObject = null;
+            localVideoPreview.srcObject = null;
+            localVideoPip.srcObject = null;
+
+            // Clean up Firestore
+            if (roomId) {
+                const roomRef = firestore.collection('rooms').doc(roomId);
+                const calleeCandidates = await roomRef.collection('calleeCandidates').get();
+                calleeCandidates.forEach(async candidate => await candidate.ref.delete());
+                const callerCandidates = await roomRef.collection('callerCandidates').get();
+                callerCandidates.forEach(async candidate => await candidate.ref.delete());
+                await roomRef.delete();
+                roomId = null;
+            }
+
+            // UI reset
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+            chatScreen.style.display = 'none';
+            homeScreen.style.display = 'flex';
+            videoPreviewContainer.style.display = 'none';
+            startButton.textContent = 'อนุญาตให้ใช้กล้อง';
+        }
+
+        function handleNextButton() {
+            hangup();
+            // Re-initiate the start process automatically
+            setTimeout(() => {
+               handleStartButton();
+            }, 100);
+        }
+
+        function handleStopButton() {
+            hangup();
+        }
+
+        // --- Helper Functions ---
+        function populateCountryDropdowns() {
+            countries.forEach(country => {
+                const option1 = new Option(country === "ทั่วโลก" ? "ประเทศของฉัน" : country, country);
+                const option2 = new Option(country === "ทั่วโลก" ? "คนที่อยากพบ (ทั่วโลก)" : country, country);
+                if (country === "ทั่วโลก") {
+                     option1.disabled = true;
+                     option1.selected = true;
+                     option2.value = "ทั่วโลก";
+                }
+                myCountrySelect.add(option1);
+                partnerCountrySelect.add(option2);
+            });
+            myCountrySelect.selectedIndex = 0; // Placeholder
+            partnerCountrySelect.value = 'ทั่วโลก';
+        }
+
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            // Only set cookie if consent is given
+            if (getCookie("sundatv_settings_accepted")) {
+                 document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax; Secure";
+            }
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        function saveSettingsToCookie() {
+            const settings = {
+                name: userNameInput.value,
+                myCountry: myCountrySelect.value,
+                partnerCountry: partnerCountrySelect.value
+            };
+            setCookie("sundatv_settings", JSON.stringify(settings), 365);
+        }
+
+        function loadSettingsFromCookie() {
+            const settingsCookie = getCookie("sundatv_settings");
+            if (settingsCookie) {
+                try {
+                    const settings = JSON.parse(settingsCookie);
+                    userNameInput.value = settings.name || '';
+                    myCountrySelect.value = settings.myCountry || '';
+                    partnerCountrySelect.value = settings.partnerCountry || 'ทั่วโลก';
+                    validateProfile();
+                } catch(e) {
+                    console.error("Could not parse settings cookie", e);
+                }
+            }
         }
     </script>
 </body>
