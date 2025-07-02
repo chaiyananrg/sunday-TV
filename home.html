@@ -9,180 +9,123 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Sarabun', sans-serif;
-            touch-action: manipulation; /* ปรับปรุงการตอบสนองต่อการสัมผัส */
-            -webkit-tap-highlight-color: transparent; /* ลบไฮไลท์เมื่อแตะบน iOS */
+        :root { --sky-gradient-light: linear-gradient(170deg, #87CEEB 0%, #a1c4fd 60%, #c2e9fb 100%); --sky-gradient-dark: linear-gradient(170deg, #0f172a 0%, #1e293b 60%, #334155 100%); }
+        body { font-family: 'Sarabun', sans-serif; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        .sky-background { background: var(--sky-gradient-light); }
+        .dark .sky-background { background: var(--sky-gradient-dark); }
+        
+        /* --- LIQUID GLASS EFFECT --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.25);
+            -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 1.5rem; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            transition: background 0.3s ease, border 0.3s ease;
         }
-        /* Sky Gradient Background */
-        .sky-background {
-            background: linear-gradient(170deg, #87CEEB 0%, #FFDAB9 80%, #FFC371 100%);
+        .dark .glass-panel {
+            background: rgba(30, 41, 59, 0.25); /* slate-800/25 */
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        /* Main Video Styling */
-        #remote-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-            background-color: #222;
+        .glass-input {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.75rem; transition: all 0.2s ease;
         }
-        /* Local Video Container - Default (Portrait) */
-        #local-video-container {
-            position: absolute;
-            bottom: 8rem; /* ยกสูงขึ้นเพื่อไม่ให้บังปุ่ม */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30%;
-            max-width: 140px;
-            aspect-ratio: 3 / 4;
-            border-radius: 1rem;
-            overflow: hidden;
-            border: 3px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-            z-index: 20;
-            transition: all 0.3s ease-in-out;
+        .dark .glass-input {
+            background: rgba(51, 65, 85, 0.4); /* slate-700/40 */
+            border-color: rgba(255, 255, 255, 0.15);
         }
-        #local-video {
-             width: 100%;
-             height: 100%;
-             object-fit: cover;
-             transform: scaleX(-1);
-        }
-        /* Responsive Layout for Landscape Mode */
-        @media (orientation: landscape) {
-            #local-video-container {
-                bottom: auto;
-                left: auto;
-                top: 50%;
-                right: 1.5rem;
-                transform: translateY(-50%);
-                width: 25%;
-                height: auto;
-                max-width: 200px;
-                max-height: 70vh;
-            }
-        }
-        /* Themed Buttons */
-        .themed-btn {
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #FFC107; /* Sunflower Yellow */
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2), inset 0 -4px 6px rgba(0,0,0,0.1);
-            transition: all 0.2s ease-in-out;
-        }
-        .themed-btn:hover {
-            transform: scale(1.1);
-            background-color: #FFD54F;
-        }
-        .themed-btn:active {
-            transform: scale(1.05);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2), inset 0 -2px 4px rgba(0,0,0,0.1);
-        }
-        /* Spinning Sun Loader */
-        .sun-loader {
-            width: 80px;
-            height: 80px;
-            position: relative;
-            animation: spin 10s linear infinite;
-        }
-        .sun-loader .sun-body {
-            width: 50px;
-            height: 50px;
-            background-color: #FFC107;
-            border-radius: 50%;
-            position: absolute;
-            top: 15px;
-            left: 15px;
-        }
-        .sun-loader .sun-ray {
-            background-color: #FFC107;
-            width: 6px;
-            height: 18px;
-            border-radius: 3px;
-            position: absolute;
-            top: -3px;
-            left: 37px;
-        }
-        .sun-ray:nth-child(2) { transform: rotate(45deg); top: 8px; left: 58px; }
-        .sun-ray:nth-child(3) { transform: rotate(90deg); top: 31px; left: 65px; }
-        .sun-ray:nth-child(4) { transform: rotate(135deg); top: 54px; left: 58px; }
-        .sun-ray:nth-child(5) { transform: rotate(180deg); top: 67px; left: 37px; }
-        .sun-ray:nth-child(6) { transform: rotate(225deg); top: 54px; left: 16px; }
-        .sun-ray:nth-child(7) { transform: rotate(270deg); top: 31px; left: 9px; }
-        .sun-ray:nth-child(8) { transform: rotate(315deg); top: 8px; left: 16px; }
+        .glass-input:focus { background: rgba(255, 255, 255, 0.6); border-color: rgba(255, 193, 7, 0.8); box-shadow: none; outline: none; }
+        .dark .glass-input:focus { background: rgba(71, 85, 105, 0.6); /* slate-600/60 */ }
+        
+        .custom-selector-panel { position: absolute; z-index: 50; top: 100%; left: 0; right: 0; margin-top: 0.5rem; animation: fadeIn 0.3s ease-out; }
+        .custom-selector-list li { transition: background-color 0.2s ease; }
 
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
+        /* --- VIDEO STYLING --- */
+        #remote-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); background-color: #222; }
+        #local-video-container { position: absolute; width: 30%; max-width: 140px; aspect-ratio: 3 / 4; border-radius: 1rem; overflow: hidden; border: 3px solid rgba(255, 255, 255, 0.8); box-shadow: 0 8px 20px rgba(0,0,0,0.25); z-index: 20; transition: all 0.3s ease-in-out; }
+        #local-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        @media (orientation: portrait) { #local-video-container { bottom: 8rem; left: 50%; transform: translateX(-50%); } }
+        @media (orientation: landscape) { #local-video-container { bottom: auto; left: auto; top: 50%; right: 1.5rem; transform: translateY(-50%); max-width: 200px; max-height: 70vh; } }
+        
+        /* --- THEMED BUTTONS & LOADER --- */
+        .themed-btn { border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #FFC107; box-shadow: 0 4px 10px rgba(0,0,0,0.2), inset 0 -4px 6px rgba(0,0,0,0.1); transition: all 0.2s ease-in-out; }
+        .themed-btn:hover { transform: scale(1.1); background-color: #FFD54F; }
+        .themed-btn:active { transform: scale(1.05); }
+        .sun-loader { width: 80px; height: 80px; position: relative; animation: spin 10s linear infinite; }
+        .sun-loader .sun-body { width: 50px; height: 50px; background-color: #FFC107; border-radius: 50%; position: absolute; top: 15px; left: 15px; }
+        .sun-loader .sun-ray { background-color: #FFC107; width: 6px; height: 18px; border-radius: 3px; position: absolute; top: -3px; left: 37px; }
+        .sun-ray:nth-child(2) { transform: rotate(45deg); top: 8px; left: 58px; } .sun-ray:nth-child(3) { transform: rotate(90deg); top: 31px; left: 65px; } .sun-ray:nth-child(4) { transform: rotate(135deg); top: 54px; left: 58px; } .sun-ray:nth-child(5) { transform: rotate(180deg); top: 67px; left: 37px; } .sun-ray:nth-child(6) { transform: rotate(225deg); top: 54px; left: 16px; } .sun-ray:nth-child(7) { transform: rotate(270deg); top: 31px; left: 9px; } .sun-ray:nth-child(8) { transform: rotate(315deg); top: 8px; left: 16px; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
     </style>
+     <script>
+        (function() {
+            const getCookie = (name) => { const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)'); return v ? v[2] : null; };
+            if (getCookie('theme') === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
 </head>
 <body class="h-screen w-screen overflow-hidden">
 
     <!-- ส่วนตั้งค่าเริ่มต้น -->
-    <div id="settings-view" class="sky-background w-full h-full flex flex-col items-center justify-center p-6 relative overflow-hidden">
-        <!-- Sun element -->
-        <div class="absolute -top-20 -right-20 w-64 h-64 bg-yellow-300 rounded-full opacity-80"></div>
+    <div id="settings-view" class="sky-background w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+        <div class="absolute -top-20 -right-20 w-64 h-64 bg-yellow-300/50 rounded-full blur-3xl dark:bg-yellow-500/20"></div>
+        <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-orange-200/40 rounded-full blur-3xl dark:bg-indigo-500/20"></div>
         
-        <div class="bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-2xl w-full max-w-md text-center z-10">
-            <h1 class="text-5xl font-bold text-gray-800 mb-2">Sunday TV</h1>
-            <p class="text-gray-600 mb-8">พบเพื่อนใหม่ใต้แสงตะวัน</p>
-            
-            <div class="space-y-4 text-left">
-                <div>
-                    <label for="my-country" class="block mb-1 text-sm font-medium text-gray-700">ประเทศของคุณ</label>
-                    <select id="my-country" class="w-full p-3 bg-gray-100 border-2 border-transparent focus:border-yellow-400 focus:ring-0 rounded-xl transition">
-                        <option>กำลังโหลด...</option>
-                    </select>
+        <div class="absolute top-4 right-4 z-20">
+            <button id="theme-toggle-btn" class="p-3 rounded-full glass-panel hover:bg-white/40 dark:hover:bg-slate-700/40 transition-colors">
+                <svg id="theme-icon-light" class="w-6 h-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <svg id="theme-icon-dark" class="w-6 h-6 text-indigo-400 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+            </button>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-6 w-full max-w-4xl z-10 fade-in">
+            <!-- Left Panel: Settings -->
+            <div class="glass-panel p-8 w-full lg:w-2/3 flex flex-col items-center">
+                <img src="https://img2.pic.in.th/pic/sunday-TV.png" alt="Sunday TV Logo" class="w-48 h-auto mb-4 drop-shadow-lg" onerror="this.style.display='none'">
+                <p class="text-gray-800 dark:text-gray-300 mb-8">พบเพื่อนใหม่ใต้ท้องฟ้า</p>
+                
+                <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div id="my-country-selector" class="relative">
+                        <label class="block mb-1 text-sm font-medium text-gray-800 dark:text-gray-300">ประเทศของคุณ</label>
+                        <button type="button" class="selector-btn w-full p-3 glass-input text-gray-800 dark:text-gray-200 flex items-center justify-between"></button>
+                    </div>
+                    <div id="partner-country-selector" class="relative">
+                        <label class="block mb-1 text-sm font-medium text-gray-800 dark:text-gray-300">ค้นหาเพื่อนจาก</label>
+                         <button type="button" class="selector-btn w-full p-3 glass-input text-gray-800 dark:text-gray-200 flex items-center justify-between"></button>
+                    </div>
                 </div>
-                <div>
-                    <label for="partner-country" class="block mb-1 text-sm font-medium text-gray-700">ค้นหาเพื่อนจาก</label>
-                    <select id="partner-country" class="w-full p-3 bg-gray-100 border-2 border-transparent focus:border-yellow-400 focus:ring-0 rounded-xl transition">
-                        <option value="worldwide">ทั่วโลก</option>
-                        <option>กำลังโหลด...</option>
-                    </select>
-                </div>
+                <button id="save-settings-btn" class="w-full mt-6 bg-blue-500 hover:bg-blue-600 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-200 active:scale-95 shadow-md">บันทึกการตั้งค่า</button>
+                <button id="start-btn" class="w-full mt-4 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-4 px-4 rounded-xl text-xl transition-transform duration-200 active:scale-95 shadow-lg">เริ่มค้นหา!</button>
+                <div id="user-id-display" class="mt-4 text-xs text-gray-600 dark:text-gray-400 text-center"></div>
             </div>
 
-            <button id="start-btn" class="w-full mt-8 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-4 px-4 rounded-xl text-xl transition-transform duration-200 active:scale-95 shadow-lg">
-                เริ่มเลย!
-            </button>
-            <div id="user-id-display" class="mt-4 text-xs text-gray-500 text-center"></div>
-        </div>
-        
-        <!-- Sunflower SVG -->
-        <div class="absolute -bottom-12 -left-12 w-48 h-48 opacity-40 z-0">
-             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g transform="translate(50,50)"><circle r="20" fill="#654321"/><g id="petals" transform="scale(1.1)"><path d="M0,-20 A20,20 0 0,1 10,-17.32 L0,0 Z" fill="#FFC107" transform="rotate(0)"/><path d="M0,-20 A20,20 0 0,1 10,-17.32 L0,0 Z" fill="#FFC107" transform="rotate(30)"/><path d="M0,-20 A20,20 0 0,1 10,-17.32 L0,0 Z" fill="#FFC107" transform="rotate(60)"/><path d="M0,-20 A20,20 0 0,1 10,-17.32 L0,0 Z" fill="#FFC107" transform="rotate(90)"/><path d="M0,-20 A20,20 0 0,1 10,-17.32 L0,0 Z" fill="#FFC107" transform="rotate(120)"/><path d="M0,-20 A20,20 0 0,1 10,-17.32 L0,0 Z" fill="#FFC107" transform="rotate(150)"/><path d="M0,-20 A20,20 0 0,1 10,-17.32 L0,0 Z" fill="#FFC107" transform="rotate(180)"/><path d="M0,-20 A20,20 0 0,1 10,-17.32 L0,0 Z" fill="#FFC107" transform="rotate(210)"/><path d="M0,-20 A20,20 0 0,1 10,-17.32 L0,0 Z" fill="#FFC107" transform="rotate(240)"/><path d="M0,-20 A20,20 0 0,1 10,-17.32 L0,0 Z" fill="#FFC107" transform="rotate(270)"/><path d="M0,-20 A20,20 0 0,1 10,-17.32 L0,0 Z" fill="#FFC107" transform="rotate(300)"/><path d="M0,-20 A20,20 0 0,1 10,-17.32 L0,0 Z" fill="#FFC107" transform="rotate(330)"/></g></g></svg>
+            <!-- Right Panel: Online Users -->
+            <div class="glass-panel p-8 w-full lg:w-1/3 flex flex-col">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 text-center">ออนไลน์ตอนนี้</h2>
+                <div id="online-users-list" class="flex-grow overflow-y-auto pr-2 space-y-2"></div>
+            </div>
         </div>
     </div>
 
-    <!-- ส่วนแสดงผลขณะค้นหา -->
+    <!-- Loading Screen -->
     <div id="loading-view" class="hidden sky-background w-full h-full flex-col items-center justify-center text-center p-6">
-        <div class="sun-loader mb-8">
-            <div class="sun-body"></div>
-            <div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div>
-            <div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div>
-        </div>
+        <div class="sun-loader mb-8"> <div class="sun-body"></div> <div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div> </div>
         <h2 class="text-3xl font-semibold text-white text-shadow">กำลังค้นหาเพื่อน...</h2>
-        <p class="text-white/80 mt-2">โปรดรอสักครู่ แสงตะวันกำลังนำทาง</p>
-        <button id="cancel-search-btn" class="mt-12 bg-white/30 hover:bg-white/50 backdrop-blur-sm text-white font-bold py-3 px-8 rounded-full transition duration-300">
-            ยกเลิก
-        </button>
+        <button id="cancel-search-btn" class="mt-12 bg-white/30 hover:bg-white/50 backdrop-blur-sm text-white font-bold py-3 px-8 rounded-full transition duration-300">ยกเลิก</button>
     </div>
 
-    <!-- ส่วนวิดีโอแชท -->
+    <!-- Chat Screen -->
     <div id="chat-view" class="hidden w-full h-full bg-black relative">
         <video id="remote-video" autoplay playsinline></video>
-        
-        <div id="local-video-container">
-            <video id="local-video" autoplay playsinline muted></video>
-        </div>
-
+        <div id="local-video-container"> <video id="local-video" autoplay playsinline muted></video> </div>
         <div class="absolute bottom-6 w-full flex items-center justify-center space-x-6 z-30">
             <button id="stop-btn" class="themed-btn w-16 h-16 bg-red-500 hover:bg-red-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-telephone-x-fill text-white" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.28 1.465l-.413 1.239a.63.63 0 0 0 .317.792l.402.202a1.75 1.75 0 0 0 2.056-.577l1.405-1.405a.63.63 0 0 0 .292-.415l.23-1.015c.12-.52.569-.924 1.09-1.135l.934-.337a.63.63 0 0 0 .42-.626V1.321a1.745 1.745 0 0 1 1.052-1.664h.004a1.745 1.745 0 0 1 1.744 1.744v.002a.63.63 0 0 0 .627.42l.933.337c.521.21.97.615 1.09 1.135l.23 1.015a.63.63 0 0 0 .292.415l1.405 1.405a1.75 1.75 0 0 0 2.056.577l.402-.202a.63.63 0 0 0 .317-.792l-.414-1.24a.97.97 0 0 1 .28-1.465l1.752-2.296a1.745 1.745 0 0 1 2.61-.163l.636.563a1.745 1.745 0 0 1-1.664 1.052h-.004a1.745 1.745 0 0 1-1.744-1.744v-.002a.63.63 0 0 0-.627-.42l-.933-.337a.97.97 0 0 1-1.09-1.135l-.23-1.015a.63.63 0 0 0-.292-.415L9.98 1.71a1.75 1.75 0 0 0-2.056-.577l-.402.202a.63.63 0 0 0-.317.792l.414 1.24a.97.97 0 0 1-.28 1.465L5.01 6.29c-.423.329-.974.445-1.465.28l-1.239-.414a.63.63 0 0 0-.792.317l-.202.402a1.75 1.75 0 0 0 .577 2.056l1.405 1.405a.63.63 0 0 0 .415.292l1.015.23c.52.12.924.569 1.135 1.09l.337.934a.63.63 0 0 0 .626.42h.004a1.745 1.745 0 0 1 1.664 1.052l-.563.636a1.745 1.745 0 0 1-1.052-1.664v-.002a.63.63 0 0 0-.42-.627l-.337-.933a.97.97 0 0 1-1.135-1.09l-1.015-.23a.63.63 0 0 0-.415-.292L2.98 6.29a1.75 1.75 0 0 0-.577-2.056l-.202-.402a.63.63 0 0 0-.792.317l-.414 1.239c-.165.49-.62.86-1.12.965l-.934.198a1.745 1.745 0 0 1-1.895-.886z"/><path fill-rule="evenodd" d="M10.146 4.646a.5.5 0 0 1 .708 0L12.5 6.293l1.646-1.647a.5.5 0 0 1 .708.708L13.207 7l1.647 1.646a.5.5 0 0 1-.708.708L12.5 7.707l-1.646 1.647a.5.5 0 0 1-.708-.708L11.793 7l-1.647-1.646a.5.5 0 0 1 0-.708z"/></svg>
+                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-telephone-fill text-white" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.28 1.465l-.413 1.239a.63.63 0 0 0 .317.792l.402.202a1.75 1.75 0 0 0 2.056-.577l1.405-1.405a.63.63 0 0 0 .292-.415l.23-1.015c.12-.52.569-.924 1.09-1.135l.934-.337a.63.63 0 0 0 .42-.626V1.321a1.745 1.745 0 0 1 1.052-1.664h.004a1.745 1.745 0 0 1 1.744 1.744v.002a.63.63 0 0 0 .627.42l.933.337c.521.21.97.615 1.09 1.135l.23 1.015a.63.63 0 0 0 .292.415l1.405 1.405a1.75 1.75 0 0 0 2.056.577l.402-.202a.63.63 0 0 0 .317-.792l-.414-1.24a.97.97 0 0 1 .28-1.465l1.752-2.296a1.745 1.745 0 0 1 2.61-.163l.636.563a1.745 1.745 0 0 1-1.664 1.052h-.004a1.745 1.745 0 0 1-1.744-1.744v-.002a.63.63 0 0 0-.627-.42l-.933-.337a.97.97 0 0 1-1.09-1.135l-.23-1.015a.63.63 0 0 0-.292-.415L9.98 1.71a1.75 1.75 0 0 0-2.056-.577l-.402.202a.63.63 0 0 0-.317.792l.414 1.24a.97.97 0 0 1-.28 1.465L5.01 6.29c-.423.329-.974.445-1.465.28l-1.239-.414a.63.63 0 0 0-.792.317l-.202.402a1.75 1.75 0 0 0 .577 2.056l1.405 1.405a.63.63 0 0 0 .415.292l1.015.23c.52.12.924.569 1.135 1.09l.337.934a.63.63 0 0 0 .626.42h.004a1.745 1.745 0 0 1 1.664 1.052l-.563.636a1.745 1.745 0 0 1-1.052-1.664v-.002a.63.63 0 0 0-.42-.627l-.337-.933a.97.97 0 0 1-1.135-1.09l-1.015-.23a.63.63 0 0 0-.415-.292L2.98 6.29a1.75 1.75 0 0 0-.577-2.056l-.202-.402a.63.63 0 0 0-.792.317l-.414 1.239c-.165.49-.62.86-1.12.965l-.934.198a1.745 1.745 0 0 1-1.895-.886z"/></svg>
             </button>
             <button id="next-btn" class="themed-btn w-20 h-20">
                 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-arrow-right text-white" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"/></svg>
@@ -190,21 +133,18 @@
         </div>
     </div>
 
-    <!-- Modal สำหรับการแจ้งเตือน -->
-    <div id="alert-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
-        <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 w-full max-w-sm text-center text-gray-800">
+    <!-- Alert Modal -->
+    <div id="alert-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="glass-panel p-6 w-full max-w-sm text-center text-gray-800 dark:text-gray-200">
             <p id="alert-modal-message" class="text-lg mb-6"></p>
-            <button id="alert-modal-close" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-3 px-6 rounded-lg active:scale-95 transition-transform">
-                เข้าใจแล้ว
-            </button>
+            <button id="alert-modal-close" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-3 px-6 rounded-lg active:scale-95 transition-transform">เข้าใจแล้ว</button>
         </div>
     </div>
 
     <script type="module">
-        // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, getDocs, onSnapshot, updateDoc, deleteDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, getDocs, onSnapshot, updateDoc, deleteDoc, query, where, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAyLE1l-eiPPW-fJIvL2uULmDWXcKRhoEM",
@@ -213,144 +153,279 @@
             storageBucket: "sunday-tv-videocall.firebasestorage.app",
             messagingSenderId: "456379728267",
             appId: "1:456379728267:web:815ef8f00b815e42172f8e",
-            measurementId: "G-WMDT7EYYQD"
         };
         
-        const appId = firebaseConfig.appId;
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
         let localStream, remoteStream, peerConnection, currentRoomId, userId, unsubscribeRoom;
-        
-        const servers = {
-            iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }],
-            iceCandidatePoolSize: 10,
+        let searchTimeout;
+        let allCountries = [];
+        let countryData = { nameMap: new Map(), onlineUsers: new Map() };
+        let settings = { myCountry: 'TH', partnerCountry: 'worldwide' };
+        let selectorUpdaters = {};
+
+        const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
+        const roomsCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/rooms`);
+        const presenceCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/presence`);
+
+        const ui = {
+            settingsView: document.getElementById('settings-view'), loadingView: document.getElementById('loading-view'),
+            chatView: document.getElementById('chat-view'), startBtn: document.getElementById('start-btn'),
+            saveSettingsBtn: document.getElementById('save-settings-btn'), cancelSearchBtn: document.getElementById('cancel-search-btn'),
+            stopBtn: document.getElementById('stop-btn'), nextBtn: document.getElementById('next-btn'),
+            localVideo: document.getElementById('local-video'), remoteVideo: document.getElementById('remote-video'),
+            userIdDisplay: document.getElementById('user-id-display'), alertModal: document.getElementById('alert-modal'),
+            alertModalMessage: document.getElementById('alert-modal-message'), alertModalClose: document.getElementById('alert-modal-close'),
+            onlineUsersList: document.getElementById('online-users-list'),
+            themeToggleBtn: document.getElementById('theme-toggle-btn'),
+            themeIconLight: document.getElementById('theme-icon-light'),
+            themeIconDark: document.getElementById('theme-icon-dark'),
         };
         
-        const roomsCollection = collection(db, `artifacts/${appId}/public/data/rooms`);
+        const setCookie = (name, value) => { document.cookie = `${name}=${value || ""}; path=/; max-age=31536000; SameSite=Lax`; };
+        const getCookie = (name) => { const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)'); return v ? v[2] : null; };
+        const showAlert = (message) => { ui.alertModalMessage.textContent = message; ui.alertModal.classList.add('flex'); ui.alertModal.classList.remove('hidden'); };
+        const getFlagEmoji = (countryCode) => {
+            if (countryCode === 'worldwide') return '🌍';
+            return countryCode ? countryCode.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397)) : '🌐';
+        }
 
-        const settingsView = document.getElementById('settings-view');
-        const loadingView = document.getElementById('loading-view');
-        const chatView = document.getElementById('chat-view');
-        const startBtn = document.getElementById('start-btn');
-        const cancelSearchBtn = document.getElementById('cancel-search-btn');
-        const stopBtn = document.getElementById('stop-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const localVideo = document.getElementById('local-video');
-        const remoteVideo = document.getElementById('remote-video');
-        const myCountrySelect = document.getElementById('my-country');
-        const partnerCountrySelect = document.getElementById('partner-country');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const alertModal = document.getElementById('alert-modal');
-        const alertModalMessage = document.getElementById('alert-modal-message');
-        const alertModalClose = document.getElementById('alert-modal-close');
+        // --- Theme Management ---
+        const updateThemeIcon = () => {
+            if (document.documentElement.classList.contains('dark')) {
+                ui.themeIconLight.classList.add('hidden');
+                ui.themeIconDark.classList.remove('hidden');
+            } else {
+                ui.themeIconLight.classList.remove('hidden');
+                ui.themeIconDark.classList.add('hidden');
+            }
+        };
+
+        const toggleTheme = () => {
+            document.documentElement.classList.toggle('dark');
+            const newTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            setCookie('theme', newTheme);
+            updateThemeIcon();
+        };
+
+        // --- Custom Selector Logic ---
+        function createCustomSelector(containerId, options) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const btn = container.querySelector('.selector-btn');
+            
+            if (!btn.querySelector('.selector-label')) {
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'selector-label flex items-center';
+                labelSpan.textContent = '...';
+                const arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                arrowSvg.setAttribute('class', 'selector-arrow w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform duration-300');
+                arrowSvg.setAttribute('fill', 'none');
+                arrowSvg.setAttribute('viewBox', '0 0 24 24');
+                arrowSvg.setAttribute('stroke', 'currentColor');
+                arrowSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />';
+                btn.append(labelSpan, arrowSvg);
+
+                const panelDiv = document.createElement('div');
+                panelDiv.className = 'custom-selector-panel glass-panel p-2 shadow-xl hidden';
+                panelDiv.innerHTML = `<div class="relative p-2"><input type="text" placeholder="ค้นหา..." class="selector-search w-full pl-4 pr-4 py-2 glass-input text-gray-800 dark:text-gray-200 focus:ring-0" /></div><ul class="selector-list max-h-60 overflow-y-auto"></ul>`;
+                container.appendChild(panelDiv);
+            }
+            
+            const label = container.querySelector('.selector-label');
+            const arrow = container.querySelector('.selector-arrow');
+            const panel = container.querySelector('.custom-selector-panel');
+            const searchInput = container.querySelector('.selector-search');
+            const list = container.querySelector('.selector-list');
+
+            const updateSelectionDisplay = (value) => {
+                const country = allCountries.find(c => c.alpha2 === value) || { name: 'ทั่วโลก', alpha2: 'worldwide' };
+                label.innerHTML = `<span class="text-xl mr-3">${getFlagEmoji(country.alpha2)}</span> ${country.name}`;
+            };
+
+            const renderList = (filter = '') => {
+                list.innerHTML = '';
+                const lowerFilter = filter.toLowerCase();
+                let currentCountries = options.isPartner ? [{ name: '🌍 ทั่วโลก', alpha2: 'worldwide', enName: 'Worldwide' }, ...allCountries] : allCountries;
+                
+                const filtered = currentCountries.filter(c => 
+                    c.name.toLowerCase().includes(lowerFilter) || 
+                    (c.enName && c.enName.toLowerCase().includes(lowerFilter)) ||
+                    c.alpha2.toLowerCase().includes(lowerFilter)
+                );
+
+                if (filtered.length === 0) {
+                    list.innerHTML = `<li class="p-3 text-center text-gray-800 dark:text-gray-400">ไม่พบประเทศ</li>`;
+                    return;
+                }
+
+                filtered.forEach(country => {
+                    const li = document.createElement('li');
+                    li.className = 'p-3 flex items-center rounded-lg cursor-pointer hover:bg-white/30 dark:hover:bg-white/10 transition-colors text-gray-800 dark:text-gray-200';
+                    li.dataset.value = country.alpha2;
+                    li.innerHTML = `<span class="text-xl mr-3">${getFlagEmoji(country.alpha2)}</span> ${country.name}`;
+                    list.appendChild(li);
+                });
+            };
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = panel.classList.contains('hidden');
+                document.querySelectorAll('.custom-selector-panel').forEach(p => p.classList.add('hidden'));
+                if(isHidden) {
+                    panel.classList.remove('hidden');
+                    arrow.classList.add('rotate-180');
+                    renderList();
+                    searchInput.focus();
+                } else {
+                    arrow.classList.remove('rotate-180');
+                }
+            });
+
+            searchInput.addEventListener('keyup', () => renderList(searchInput.value));
+
+            list.addEventListener('click', (e) => {
+                const li = e.target.closest('li');
+                if (li && li.dataset.value) {
+                    const newValue = li.dataset.value;
+                    options.setter(newValue);
+                    updateSelectionDisplay(newValue);
+                    panel.classList.add('hidden');
+                    arrow.classList.remove('rotate-180');
+                }
+            });
+            
+            selectorUpdaters[containerId] = () => updateSelectionDisplay(options.getter());
+            selectorUpdaters[containerId]();
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.relative')) {
+                document.querySelectorAll('.custom-selector-panel').forEach(p => p.classList.add('hidden'));
+                document.querySelectorAll('.selector-arrow').forEach(a => a.classList.remove('rotate-180'));
+            }
+        });
 
         async function loadCountries() {
             try {
                 const response = await fetch('https://raw.githubusercontent.com/ponlawat-w/country-list-th/refs/heads/master/country-list-th.json');
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const countryData = await response.json();
-                populateCountries(countryData);
+                allCountries = await response.json();
+                allCountries.sort((a, b) => a.name.localeCompare(b.name, 'th'));
+                countryData.nameMap = new Map(allCountries.map(c => [c.alpha2, c.name]));
+                
+                settings.myCountry = getCookie("myCountry") || 'TH';
+                settings.partnerCountry = getCookie("partnerCountry") || 'worldwide';
+
+                createCustomSelector('my-country-selector', { getter: () => settings.myCountry, setter: (v) => settings.myCountry = v, isPartner: false });
+                createCustomSelector('partner-country-selector', { getter: () => settings.partnerCountry, setter: (v) => settings.partnerCountry = v, isPartner: true });
+
             } catch (error) {
                 console.error("Could not load country list:", error);
-                const fallbackCountries = [{name: 'ไทย', alpha2: 'TH'}, {name: 'สหรัฐอเมริกา', alpha2: 'US'}];
-                populateCountries(fallbackCountries);
-                showAlert("ไม่สามารถโหลดรายชื่อประเทศได้ ใช้รายชื่อสำรองแทน");
-            }
-        }
-
-        function populateCountries(countries) {
-            myCountrySelect.innerHTML = '';
-            partnerCountrySelect.innerHTML = '<option value="worldwide">ทั่วโลก</option>';
-            countries.sort((a, b) => a.name.localeCompare(b.name, 'th'));
-            countries.forEach(country => {
-                if (country.name && country.alpha2) {
-                    const option1 = new Option(country.name, country.alpha2);
-                    const option2 = new Option(country.name, country.alpha2);
-                    myCountrySelect.add(option1);
-                    partnerCountrySelect.add(option2);
-                }
-            });
-            if (myCountrySelect.querySelector('option[value="TH"]')) {
-               myCountrySelect.value = 'TH';
+                showAlert("ไม่สามารถโหลดรายชื่อประเทศได้");
             }
         }
         
-        function showAlert(message) {
-            alertModalMessage.textContent = message;
-            alertModal.classList.remove('hidden');
-            alertModal.classList.add('flex');
-        }
-
-        alertModalClose.addEventListener('click', () => {
-            alertModal.classList.add('hidden');
-            alertModal.classList.remove('flex');
-        });
+        const updatePresence = async (status) => {
+            if (!userId) return;
+            await setDoc(doc(presenceCollection, userId), { status, country: settings.myCountry, last_seen: serverTimestamp() });
+        };
+        
+        const listenForOnlineUsers = () => {
+            onSnapshot(query(presenceCollection, where("status", "==", "online")), (snapshot) => {
+                countryData.onlineUsers = new Map(snapshot.docs.map(d => [d.id, d.data()]));
+                displayOnlineUsers();
+            });
+        };
+        
+        const displayOnlineUsers = () => {
+            const onlineList = Array.from(countryData.onlineUsers.entries()).filter(([id]) => id !== userId);
+            if (onlineList.length === 0) {
+                ui.onlineUsersList.innerHTML = `<div class="text-center text-gray-600 dark:text-gray-400 pt-8 flex flex-col items-center"><p>ยังไม่มีใครออนไลน์</p></div>`;
+                return;
+            }
+            ui.onlineUsersList.innerHTML = onlineList.map(([id, user]) => {
+                const countryName = countryData.nameMap.get(user.country) || user.country;
+                return `<div class="flex items-center p-2 rounded-lg hover:bg-white/20 dark:hover:bg-white/10 transition-colors duration-200">
+                    <span class="text-2xl mr-4">${getFlagEmoji(user.country)}</span>
+                    <span class="text-gray-800 dark:text-gray-300">${countryName}</span>
+                    <span class="ml-auto w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
+                </div>`;
+            }).join('');
+        };
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 userId = user.uid;
-                userIdDisplay.textContent = `ID: ${userId.substring(0, 12)}...`;
-                startBtn.disabled = false;
-                startBtn.textContent = 'เริ่มเลย!';
+                ui.userIdDisplay.textContent = `ID: ${userId.substring(0, 12)}...`;
+                ui.startBtn.disabled = false;
+                await updatePresence('online');
+                listenForOnlineUsers();
             } else {
-                await initializeAuth();
+                await signInAnonymously(auth).catch(err => console.error("Anonymous sign-in failed", err));
             }
         });
+        
+        const resetToSettings = () => {
+            ui.loadingView.style.display = 'none';
+            ui.chatView.style.display = 'none';
+            ui.settingsView.style.display = 'flex';
+            if (selectorUpdaters['my-country-selector']) selectorUpdaters['my-country-selector']();
+            if (selectorUpdaters['partner-country-selector']) selectorUpdaters['partner-country-selector']();
+        };
 
-        async function initializeAuth() {
-            startBtn.disabled = true;
-            startBtn.textContent = 'กำลังเชื่อมต่อ...';
-            try {
-                await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Authentication failed:", error);
-                if (error.code === 'auth/configuration-not-found') {
-                    userIdDisplay.innerHTML = `<span class="text-red-500 font-bold">การตั้งค่าผิดพลาด:</span><br><span class="text-sm text-gray-600">กรุณาเปิดใช้งานผู้ให้บริการ "Anonymous" ใน Firebase Console</span>`;
-                    startBtn.textContent = 'ตั้งค่าไม่สำเร็จ';
-                    startBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                    startBtn.classList.remove('bg-yellow-400', 'hover:bg-yellow-500');
-                } else {
-                    userIdDisplay.textContent = "การเชื่อมต่อล้มเหลว กรุณาลองใหม่";
-                }
+        const hangUp = async (findNextAfter = false) => {
+            clearTimeout(searchTimeout);
+            if (localStream) localStream.getTracks().forEach(track => track.stop());
+            if (peerConnection) peerConnection.close();
+            if (unsubscribeRoom) unsubscribeRoom();
+
+            if (currentRoomId) {
+                try { await deleteDoc(doc(db, `artifacts/${firebaseConfig.appId}/public/data/rooms/${currentRoomId}`)); } catch (error) {}
             }
-        }
+
+            localStream = remoteStream = peerConnection = currentRoomId = unsubscribeRoom = null;
+            if(ui.remoteVideo) ui.remoteVideo.srcObject = null;
+            if(ui.localVideo) ui.localVideo.srcObject = null;
+
+            if (findNextAfter) await startChat();
+            else resetToSettings();
+        };
+        
+        const switchToChatView = () => {
+            ui.loadingView.style.display = 'none';
+            ui.chatView.style.display = 'block';
+        };
 
         const startChat = async () => {
-            if (startBtn.disabled) return;
-            settingsView.style.display = 'none';
-            loadingView.style.display = 'flex';
-            chatView.style.display = 'none';
+            if (ui.startBtn.disabled) return;
+            ui.settingsView.style.display = 'none';
+            ui.loadingView.style.display = 'flex';
             
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localVideo.srcObject = localStream;
-            } catch (error) {
-                console.error("Could not get user media:", error);
-                showAlert("กรุณาอนุญาตให้เข้าถึงกล้องและไมโครโฟนเพื่อเริ่มใช้งาน");
-                resetToSettings();
-                return;
-            }
+                ui.localVideo.srcObject = localStream;
+            } catch (error) { showAlert("กรุณาอนุญาตให้เข้าถึงกล้องและไมโครโฟน"); resetToSettings(); return; }
 
-            const partnerCountry = partnerCountrySelect.value;
-            const q = partnerCountry === 'worldwide'
+            searchTimeout = setTimeout(() => { showAlert("ไม่พบผู้ใช้งานในขณะนี้ กรุณาลองใหม่อีกครั้ง"); hangUp(false); }, 30000);
+
+            const q = settings.partnerCountry === 'worldwide'
                 ? query(roomsCollection, where("status", "==", "waiting"))
-                : query(roomsCollection, where("status", "==", "waiting"), where("offererCountry", "==", partnerCountry));
+                : query(roomsCollection, where("status", "==", "waiting"), where("offererCountry", "==", settings.partnerCountry));
 
             const querySnapshot = await getDocs(q);
-            const availableRooms = [];
-            querySnapshot.forEach(doc => {
-                if (doc.data().offererId !== userId) {
-                    availableRooms.push({ id: doc.id, ...doc.data() });
+            let roomFound = false;
+            for (const roomDoc of querySnapshot.docs) {
+                const roomData = roomDoc.data();
+                if (roomData.offererId !== userId && countryData.onlineUsers.has(roomData.offererId)) {
+                    await joinRoom(roomDoc.id, roomData.offer);
+                    roomFound = true;
+                    break;
                 }
-            });
-
-            if (availableRooms.length > 0) {
-                await joinRoom(availableRooms[0].id, availableRooms[0].offer);
-            } else {
-                await createRoom();
             }
+            if (!roomFound) await createRoom();
         };
 
         const createRoom = async () => {
@@ -361,29 +436,27 @@
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
             
-            const roomData = {
+            const roomRef = await addDoc(roomsCollection, {
                 offer: { type: offer.type, sdp: offer.sdp },
                 offererId: userId,
-                offererCountry: myCountrySelect.value,
+                offererCountry: settings.myCountry,
                 status: 'waiting',
                 createdAt: serverTimestamp(),
-            };
-            const roomRef = await addDoc(roomsCollection, roomData);
+            });
             currentRoomId = roomRef.id;
 
             unsubscribeRoom = onSnapshot(roomRef, async (snapshot) => {
                 const data = snapshot.data();
                 if (data && data.answer && !peerConnection.currentRemoteDescription) {
-                    const remoteDesc = new RTCSessionDescription(data.answer);
-                    await peerConnection.setRemoteDescription(remoteDesc);
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
                     await updateDoc(roomRef, { status: 'connected' });
                 }
             });
 
-            const answerCandidatesCollection = collection(db, `artifacts/${appId}/public/data/rooms/${currentRoomId}/answerCandidates`);
+            const answerCandidatesCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/rooms/${currentRoomId}/answerCandidates`);
             onSnapshot(answerCandidatesCollection, (snapshot) => {
                 snapshot.docChanges().forEach(change => {
-                    if (change.type === 'added') peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                    if (change.type === 'added' && peerConnection && peerConnection.signalingState !== 'closed') peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
                 });
             });
         };
@@ -399,18 +472,18 @@
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
             
-            const roomRef = doc(db, `artifacts/${appId}/public/data/rooms/${currentRoomId}`);
+            const roomRef = doc(db, `artifacts/${firebaseConfig.appId}/public/data/rooms/${currentRoomId}`);
             await updateDoc(roomRef, { 
                 answer: { type: answer.type, sdp: answer.sdp },
                 answererId: userId,
-                answererCountry: myCountrySelect.value,
+                answererCountry: settings.myCountry,
                 status: 'connected'
             });
 
-            const offerCandidatesCollection = collection(db, `artifacts/${appId}/public/data/rooms/${currentRoomId}/offerCandidates`);
+            const offerCandidatesCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/rooms/${currentRoomId}/offerCandidates`);
             onSnapshot(offerCandidatesCollection, (snapshot) => {
                 snapshot.docChanges().forEach(change => {
-                    if (change.type === 'added') peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                    if (change.type === 'added' && peerConnection && peerConnection.signalingState !== 'closed') peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
                 });
             });
         };
@@ -418,78 +491,54 @@
         function registerPeerConnectionListeners() {
             peerConnection.onicecandidate = event => {
                 if (event.candidate) {
-                    const roomRef = doc(db, `artifacts/${appId}/public/data/rooms/${currentRoomId}`);
+                    const roomRef = doc(db, `artifacts/${firebaseConfig.appId}/public/data/rooms/${currentRoomId}`);
                     const candidatesCollectionPath = peerConnection.currentRemoteDescription ? 'answerCandidates' : 'offerCandidates';
                     addDoc(collection(roomRef, candidatesCollectionPath), event.candidate.toJSON());
                 }
             };
 
             peerConnection.ontrack = event => {
+                clearTimeout(searchTimeout);
                 remoteStream = event.streams[0];
-                remoteVideo.srcObject = remoteStream;
+                ui.remoteVideo.srcObject = remoteStream;
                 switchToChatView();
             };
 
             peerConnection.onconnectionstatechange = () => {
                 if (['disconnected', 'failed', 'closed'].includes(peerConnection.connectionState)) {
-                    hangUp(true); // Pass true to auto-find next
+                    hangUp(true);
                 }
             };
         }
 
-        function switchToChatView() {
-            loadingView.style.display = 'none';
-            chatView.style.display = 'block';
-        }
-        
-        function resetToSettings() {
-            loadingView.style.display = 'none';
-            chatView.style.display = 'none';
-            settingsView.style.display = 'flex';
-        }
+        ui.alertModalClose.addEventListener('click', () => ui.alertModal.classList.add('hidden'));
+        ui.saveSettingsBtn.addEventListener('click', () => {
+            setCookie("myCountry", settings.myCountry);
+            setCookie("partnerCountry", settings.partnerCountry);
+            updatePresence('online');
+            const btn = ui.saveSettingsBtn;
+            btn.textContent = 'บันทึกแล้ว!';
+            btn.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'dark:bg-indigo-500', 'dark:hover:bg-indigo-600');
+            btn.classList.add('bg-green-500');
+            setTimeout(() => {
+                btn.textContent = 'บันทึกการตั้งค่า';
+                btn.classList.add('bg-blue-500', 'hover:bg-blue-600', 'dark:bg-indigo-500', 'dark:hover:bg-indigo-600');
+                btn.classList.remove('bg-green-500');
+            }, 2000);
+        });
+        ui.startBtn.addEventListener('click', startChat);
+        ui.nextBtn.addEventListener('click', () => hangUp(true));
+        ui.stopBtn.addEventListener('click', () => hangUp(false));
+        ui.cancelSearchBtn.addEventListener('click', () => hangUp(false));
+        ui.themeToggleBtn.addEventListener('click', toggleTheme);
+        window.addEventListener('beforeunload', () => updatePresence('offline'));
+        document.addEventListener('visibilitychange', () => updatePresence(document.visibilityState === 'hidden' ? 'offline' : 'online'));
 
-        const hangUp = async (findNextAfter = false) => {
-            if (localStream) localStream.getTracks().forEach(track => track.stop());
-            if (peerConnection) peerConnection.close();
-            if (unsubscribeRoom) unsubscribeRoom();
-
-            if (currentRoomId) {
-                const roomRef = doc(db, `artifacts/${appId}/public/data/rooms/${currentRoomId}`);
-                try { await deleteDoc(roomRef); } catch (error) { console.error("Error deleting room:", error); }
-            }
-
-            localStream = remoteStream = peerConnection = currentRoomId = unsubscribeRoom = null;
-            remoteVideo.srcObject = localVideo.srcObject = null;
-
-            if (findNextAfter) {
-                await startChat();
-            } else {
-                resetToSettings();
-            }
+        window.onload = () => { 
+            loadCountries(); 
+            updateThemeIcon();
         };
 
-        const findNext = () => hangUp(true);
-        const stopChat = () => hangUp(false);
-        const cancelSearch = () => hangUp(false);
-
-        let touchStartX = 0;
-        let touchEndX = 0;
-
-        function checkDirection() {
-            if (touchStartX - touchEndX > 75) findNext();
-        }
-
-        chatView.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
-        chatView.addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; checkDirection(); }, { passive: true });
-
-        startBtn.addEventListener('click', startChat);
-        nextBtn.addEventListener('click', findNext);
-        stopBtn.addEventListener('click', stopChat);
-        cancelSearchBtn.addEventListener('click', cancelSearch);
-
-        window.onload = () => {
-            loadCountries();
-        };
     </script>
 </body>
 </html>
