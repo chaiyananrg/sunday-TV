@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,40 +9,29 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --sky-gradient-light: linear-gradient(170deg, #87CEEB 0%, #a1c4fd 60%, #c2e9fb 100%); --sky-gradient-dark: linear-gradient(170deg, #0f172a 0%, #1e293b 60%, #334155 100%); }
         body { font-family: 'Sarabun', sans-serif; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-        .sky-background { background: var(--sky-gradient-light); }
-        .dark .sky-background { background: var(--sky-gradient-dark); }
+        .sky-background { background: linear-gradient(170deg, #0f172a 0%, #1e293b 60%, #334155 100%); }
         
         /* --- LIQUID GLASS EFFECT --- */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(30, 41, 59, 0.25); /* slate-800/25 */
             -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-radius: 1.5rem; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
             transition: background 0.3s ease, border 0.3s ease;
         }
-        .dark .glass-panel {
-            background: rgba(30, 41, 59, 0.25); /* slate-800/25 */
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
         .glass-input {
-            background: rgba(255, 255, 255, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(51, 65, 85, 0.4); /* slate-700/40 */
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 0.75rem; transition: all 0.2s ease;
         }
-        .dark .glass-input {
-            background: rgba(51, 65, 85, 0.4); /* slate-700/40 */
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-        .glass-input:focus { background: rgba(255, 255, 255, 0.6); border-color: rgba(255, 193, 7, 0.8); box-shadow: none; outline: none; }
-        .dark .glass-input:focus { background: rgba(71, 85, 105, 0.6); /* slate-600/60 */ }
+        .glass-input:focus { background: rgba(71, 85, 105, 0.6); /* slate-600/60 */ border-color: rgba(99, 102, 241, 0.8); box-shadow: none; outline: none; }
         
         .custom-selector-panel { position: absolute; z-index: 50; top: 100%; left: 0; right: 0; margin-top: 0.5rem; animation: fadeIn 0.3s ease-out; }
         .custom-selector-list li { transition: background-color 0.2s ease; }
 
         /* --- VIDEO STYLING --- */
-        #remote-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); background-color: #222; }
+        #remote-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); background-color: #111; }
         #local-video-container { position: absolute; width: 30%; max-width: 140px; aspect-ratio: 3 / 4; border-radius: 1rem; overflow: hidden; border: 3px solid rgba(255, 255, 255, 0.8); box-shadow: 0 8px 20px rgba(0,0,0,0.25); z-index: 20; transition: all 0.3s ease-in-out; }
         #local-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         @media (orientation: portrait) { #local-video-container { bottom: 8rem; left: 50%; transform: translateX(-50%); } }
@@ -60,54 +49,41 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
     </style>
-     <script>
-        (function() {
-            const getCookie = (name) => { const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)'); return v ? v[2] : null; };
-            if (getCookie('theme') === 'dark') {
-                document.documentElement.classList.add('dark');
-            }
-        })();
-    </script>
 </head>
-<body class="h-screen w-screen overflow-hidden">
+<body class="h-screen w-screen overflow-hidden dark">
 
     <!-- ส่วนตั้งค่าเริ่มต้น -->
     <div id="settings-view" class="sky-background w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
-        <div class="absolute -top-20 -right-20 w-64 h-64 bg-yellow-300/50 rounded-full blur-3xl dark:bg-yellow-500/20"></div>
-        <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-orange-200/40 rounded-full blur-3xl dark:bg-indigo-500/20"></div>
+        <div class="absolute -top-20 -right-20 w-64 h-64 bg-yellow-500/20 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl"></div>
         
-        <div class="absolute top-4 right-4 z-20">
-            <button id="theme-toggle-btn" class="p-3 rounded-full glass-panel hover:bg-white/40 dark:hover:bg-slate-700/40 transition-colors">
-                <svg id="theme-icon-light" class="w-6 h-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                <svg id="theme-icon-dark" class="w-6 h-6 text-indigo-400 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-            </button>
-        </div>
-
         <div class="flex flex-col lg:flex-row gap-6 w-full max-w-4xl z-10 fade-in">
             <!-- Left Panel: Settings -->
             <div class="glass-panel p-8 w-full lg:w-2/3 flex flex-col items-center">
                 <img src="https://img2.pic.in.th/pic/sunday-TV.png" alt="Sunday TV Logo" class="w-48 h-auto mb-4 drop-shadow-lg" onerror="this.style.display='none'">
-                <p class="text-gray-800 dark:text-gray-300 mb-8">พบเพื่อนใหม่ใต้ท้องฟ้า</p>
+                <p class="text-gray-300 mb-8">พบเพื่อนใหม่ใต้ท้องฟ้า</p>
                 
                 <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div id="my-country-selector" class="relative">
-                        <label class="block mb-1 text-sm font-medium text-gray-800 dark:text-gray-300">ประเทศของคุณ</label>
-                        <button type="button" class="selector-btn w-full p-3 glass-input text-gray-800 dark:text-gray-200 flex items-center justify-between"></button>
+                        <label class="block mb-1 text-sm font-medium text-gray-300">ประเทศของคุณ</label>
+                        <button type="button" class="selector-btn w-full p-3 glass-input text-gray-200 flex items-center justify-between"></button>
                     </div>
                     <div id="partner-country-selector" class="relative">
-                        <label class="block mb-1 text-sm font-medium text-gray-800 dark:text-gray-300">ค้นหาเพื่อนจาก</label>
-                         <button type="button" class="selector-btn w-full p-3 glass-input text-gray-800 dark:text-gray-200 flex items-center justify-between"></button>
+                        <label class="block mb-1 text-sm font-medium text-gray-300">ค้นหาเพื่อนจาก</label>
+                         <button type="button" class="selector-btn w-full p-3 glass-input text-gray-200 flex items-center justify-between"></button>
                     </div>
                 </div>
-                <button id="save-settings-btn" class="w-full mt-6 bg-blue-500 hover:bg-blue-600 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-200 active:scale-95 shadow-md">บันทึกการตั้งค่า</button>
+                <button id="save-settings-btn" class="w-full mt-6 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-200 active:scale-95 shadow-md">บันทึกการตั้งค่า</button>
                 <button id="start-btn" class="w-full mt-4 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-4 px-4 rounded-xl text-xl transition-transform duration-200 active:scale-95 shadow-lg">เริ่มค้นหา!</button>
-                <div id="user-id-display" class="mt-4 text-xs text-gray-600 dark:text-gray-400 text-center"></div>
+                <div id="user-id-display" class="mt-4 text-xs text-gray-400 text-center"></div>
             </div>
 
             <!-- Right Panel: Online Users -->
-            <div class="glass-panel p-8 w-full lg:w-1/3 flex flex-col">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 text-center">ออนไลน์ตอนนี้</h2>
-                <div id="online-users-list" class="flex-grow overflow-y-auto pr-2 space-y-2"></div>
+            <div class="glass-panel p-8 w-full lg:w-1/3 flex flex-col items-center justify-center">
+                <h2 class="text-2xl font-bold text-gray-200 mb-4 text-center">ออนไลน์ตอนนี้</h2>
+                <div id="online-users-display" class="flex-grow flex items-center justify-center w-full">
+                    <!-- JS will populate this -->
+                </div>
             </div>
         </div>
     </div>
@@ -135,7 +111,7 @@
 
     <!-- Alert Modal -->
     <div id="alert-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="glass-panel p-6 w-full max-w-sm text-center text-gray-800 dark:text-gray-200">
+        <div class="glass-panel p-6 w-full max-w-sm text-center text-gray-200">
             <p id="alert-modal-message" class="text-lg mb-6"></p>
             <button id="alert-modal-close" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-3 px-6 rounded-lg active:scale-95 transition-transform">เข้าใจแล้ว</button>
         </div>
@@ -178,10 +154,7 @@
             localVideo: document.getElementById('local-video'), remoteVideo: document.getElementById('remote-video'),
             userIdDisplay: document.getElementById('user-id-display'), alertModal: document.getElementById('alert-modal'),
             alertModalMessage: document.getElementById('alert-modal-message'), alertModalClose: document.getElementById('alert-modal-close'),
-            onlineUsersList: document.getElementById('online-users-list'),
-            themeToggleBtn: document.getElementById('theme-toggle-btn'),
-            themeIconLight: document.getElementById('theme-icon-light'),
-            themeIconDark: document.getElementById('theme-icon-dark'),
+            onlineUsersDisplay: document.getElementById('online-users-display'),
         };
         
         const setCookie = (name, value) => { document.cookie = `${name}=${value || ""}; path=/; max-age=31536000; SameSite=Lax`; };
@@ -192,24 +165,6 @@
             return countryCode ? countryCode.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397)) : '🌐';
         }
 
-        // --- Theme Management ---
-        const updateThemeIcon = () => {
-            if (document.documentElement.classList.contains('dark')) {
-                ui.themeIconLight.classList.add('hidden');
-                ui.themeIconDark.classList.remove('hidden');
-            } else {
-                ui.themeIconLight.classList.remove('hidden');
-                ui.themeIconDark.classList.add('hidden');
-            }
-        };
-
-        const toggleTheme = () => {
-            document.documentElement.classList.toggle('dark');
-            const newTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-            setCookie('theme', newTheme);
-            updateThemeIcon();
-        };
-
         // --- Custom Selector Logic ---
         function createCustomSelector(containerId, options) {
             const container = document.getElementById(containerId);
@@ -219,9 +174,8 @@
             if (!btn.querySelector('.selector-label')) {
                 const labelSpan = document.createElement('span');
                 labelSpan.className = 'selector-label flex items-center';
-                labelSpan.textContent = '...';
                 const arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                arrowSvg.setAttribute('class', 'selector-arrow w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform duration-300');
+                arrowSvg.setAttribute('class', 'selector-arrow w-5 h-5 text-gray-400 transition-transform duration-300');
                 arrowSvg.setAttribute('fill', 'none');
                 arrowSvg.setAttribute('viewBox', '0 0 24 24');
                 arrowSvg.setAttribute('stroke', 'currentColor');
@@ -230,7 +184,7 @@
 
                 const panelDiv = document.createElement('div');
                 panelDiv.className = 'custom-selector-panel glass-panel p-2 shadow-xl hidden';
-                panelDiv.innerHTML = `<div class="relative p-2"><input type="text" placeholder="ค้นหา..." class="selector-search w-full pl-4 pr-4 py-2 glass-input text-gray-800 dark:text-gray-200 focus:ring-0" /></div><ul class="selector-list max-h-60 overflow-y-auto"></ul>`;
+                panelDiv.innerHTML = `<div class="relative p-2"><input type="text" placeholder="ค้นหา..." class="selector-search w-full pl-4 pr-4 py-2 glass-input text-gray-200 focus:ring-0" /></div><ul class="selector-list max-h-60 overflow-y-auto"></ul>`;
                 container.appendChild(panelDiv);
             }
             
@@ -257,13 +211,13 @@
                 );
 
                 if (filtered.length === 0) {
-                    list.innerHTML = `<li class="p-3 text-center text-gray-800 dark:text-gray-400">ไม่พบประเทศ</li>`;
+                    list.innerHTML = `<li class="p-3 text-center text-gray-400">ไม่พบประเทศ</li>`;
                     return;
                 }
 
                 filtered.forEach(country => {
                     const li = document.createElement('li');
-                    li.className = 'p-3 flex items-center rounded-lg cursor-pointer hover:bg-white/30 dark:hover:bg-white/10 transition-colors text-gray-800 dark:text-gray-200';
+                    li.className = 'p-3 flex items-center rounded-lg cursor-pointer hover:bg-white/10 transition-colors text-gray-200';
                     li.dataset.value = country.alpha2;
                     li.innerHTML = `<span class="text-xl mr-3">${getFlagEmoji(country.alpha2)}</span> ${country.name}`;
                     list.appendChild(li);
@@ -341,19 +295,33 @@
         };
         
         const displayOnlineUsers = () => {
-            const onlineList = Array.from(countryData.onlineUsers.entries()).filter(([id]) => id !== userId);
-            if (onlineList.length === 0) {
-                ui.onlineUsersList.innerHTML = `<div class="text-center text-gray-600 dark:text-gray-400 pt-8 flex flex-col items-center"><p>ยังไม่มีใครออนไลน์</p></div>`;
-                return;
+            const onlineCount = countryData.onlineUsers.size > 0 ? Array.from(countryData.onlineUsers.keys()).filter(id => id !== userId).length : 0;
+            const displayDiv = ui.onlineUsersDisplay;
+
+            if (onlineCount <= 0) {
+                displayDiv.innerHTML = `
+                    <div class="text-center text-gray-400">
+                        <p class="text-6xl font-bold">0</p>
+                        <p class="mt-2">คน</p>
+                        <p class="text-xs mt-4">ยังไม่มีใครออนไลน์</p>
+                    </div>
+                `;
+            } else {
+                displayDiv.innerHTML = `
+                     <div class="text-center text-white">
+                        <div class="relative w-16 h-16 mx-auto mb-4">
+                            <div class="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-75"></div>
+                            <div class="relative flex items-center justify-center w-full h-full bg-green-500 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-6xl font-bold">${onlineCount}</p>
+                        <p class="text-gray-300 mt-2">คน</p>
+                    </div>
+                `;
             }
-            ui.onlineUsersList.innerHTML = onlineList.map(([id, user]) => {
-                const countryName = countryData.nameMap.get(user.country) || user.country;
-                return `<div class="flex items-center p-2 rounded-lg hover:bg-white/20 dark:hover:bg-white/10 transition-colors duration-200">
-                    <span class="text-2xl mr-4">${getFlagEmoji(user.country)}</span>
-                    <span class="text-gray-800 dark:text-gray-300">${countryName}</span>
-                    <span class="ml-auto w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
-                </div>`;
-            }).join('');
         };
 
         onAuthStateChanged(auth, async (user) => {
@@ -379,14 +347,17 @@
         const hangUp = async (findNextAfter = false) => {
             clearTimeout(searchTimeout);
             if (localStream) localStream.getTracks().forEach(track => track.stop());
-            if (peerConnection) peerConnection.close();
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
             if (unsubscribeRoom) unsubscribeRoom();
 
             if (currentRoomId) {
                 try { await deleteDoc(doc(db, `artifacts/${firebaseConfig.appId}/public/data/rooms/${currentRoomId}`)); } catch (error) {}
             }
 
-            localStream = remoteStream = peerConnection = currentRoomId = unsubscribeRoom = null;
+            localStream = remoteStream = currentRoomId = unsubscribeRoom = null;
             if(ui.remoteVideo) ui.remoteVideo.srcObject = null;
             if(ui.localVideo) ui.localVideo.srcObject = null;
 
@@ -419,7 +390,7 @@
             let roomFound = false;
             for (const roomDoc of querySnapshot.docs) {
                 const roomData = roomDoc.data();
-                if (roomData.offererId !== userId && countryData.onlineUsers.has(roomData.offererId)) {
+                if (roomData.offererId !== userId) {
                     await joinRoom(roomDoc.id, roomData.offer);
                     roomFound = true;
                     break;
@@ -447,7 +418,7 @@
 
             unsubscribeRoom = onSnapshot(roomRef, async (snapshot) => {
                 const data = snapshot.data();
-                if (data && data.answer && !peerConnection.currentRemoteDescription) {
+                if (peerConnection && data && data.answer && !peerConnection.currentRemoteDescription) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
                     await updateDoc(roomRef, { status: 'connected' });
                 }
@@ -490,7 +461,7 @@
 
         function registerPeerConnectionListeners() {
             peerConnection.onicecandidate = event => {
-                if (event.candidate) {
+                if (event.candidate && currentRoomId) {
                     const roomRef = doc(db, `artifacts/${firebaseConfig.appId}/public/data/rooms/${currentRoomId}`);
                     const candidatesCollectionPath = peerConnection.currentRemoteDescription ? 'answerCandidates' : 'offerCandidates';
                     addDoc(collection(roomRef, candidatesCollectionPath), event.candidate.toJSON());
@@ -505,7 +476,7 @@
             };
 
             peerConnection.onconnectionstatechange = () => {
-                if (['disconnected', 'failed', 'closed'].includes(peerConnection.connectionState)) {
+                if (peerConnection && ['disconnected', 'failed', 'closed'].includes(peerConnection.connectionState)) {
                     hangUp(true);
                 }
             };
@@ -518,11 +489,11 @@
             updatePresence('online');
             const btn = ui.saveSettingsBtn;
             btn.textContent = 'บันทึกแล้ว!';
-            btn.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'dark:bg-indigo-500', 'dark:hover:bg-indigo-600');
+            btn.classList.remove('bg-indigo-500', 'hover:bg-indigo-600');
             btn.classList.add('bg-green-500');
             setTimeout(() => {
                 btn.textContent = 'บันทึกการตั้งค่า';
-                btn.classList.add('bg-blue-500', 'hover:bg-blue-600', 'dark:bg-indigo-500', 'dark:hover:bg-indigo-600');
+                btn.classList.add('bg-indigo-500', 'hover:bg-indigo-600');
                 btn.classList.remove('bg-green-500');
             }, 2000);
         });
@@ -530,13 +501,11 @@
         ui.nextBtn.addEventListener('click', () => hangUp(true));
         ui.stopBtn.addEventListener('click', () => hangUp(false));
         ui.cancelSearchBtn.addEventListener('click', () => hangUp(false));
-        ui.themeToggleBtn.addEventListener('click', toggleTheme);
         window.addEventListener('beforeunload', () => updatePresence('offline'));
         document.addEventListener('visibilitychange', () => updatePresence(document.visibilityState === 'hidden' ? 'offline' : 'online'));
 
         window.onload = () => { 
             loadCountries(); 
-            updateThemeIcon();
         };
 
     </script>
