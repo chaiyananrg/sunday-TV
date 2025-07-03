@@ -1,391 +1,724 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sunday TV - พบปะเพื่อนใหม่ทั่วโลก</title>
+    <title>Sunday TV</title>
+    <link rel="icon" href="https://img2.pic.in.th/pic/sunday-TV.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; font-family: 'Mitr', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            background-color: #0c0a18;
-        }
-        .screen {
-            width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease, visibility 0.5s;
-        }
-        .hidden {
-            opacity: 0; visibility: hidden; pointer-events: none;
-        }
-        #home-screen {
-            background-image: radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 0%), radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%), radial-gradient(at 75% 2%, hsla(257, 98%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 10% 29%, hsla(256, 96%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 0.1) 0px, transparent 50%), radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 0.1) 0px, transparent 50%), radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 0.1) 0px, transparent 50%);
-            flex-direction: column;
-        }
-        #chat-screen {
-            position: fixed; top: 0; left: 0; background-color: #000;
-            flex-direction: column;
-        }
-        @media (min-width: 1024px) { /* lg breakpoint */
-            #chat-screen { flex-direction: row; }
-        }
-        .video-container {
-            position: relative;
-            overflow: hidden;
-            background-color: #1a1a1a;
-        }
-        video {
-            width: 100%; height: 100%; object-fit: cover;
-        }
-        #localVideo, #local-preview-video {
-             transform: scaleX(-1); /* Mirror local video */
-        }
-        #chat-controls {
-            position: absolute; bottom: 32px; left: 50%;
-            transform: translateX(-50%); display: flex; gap: 1.5rem;
-            padding: 12px; background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(10px); border-radius: 999px;
-        }
-        .control-btn {
-            width: 72px; height: 72px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2rem; color: white; border: none; cursor: pointer;
-            transition: all 0.2s;
-        }
-        .control-btn:hover { transform: scale(1.1); }
-        .country-selector-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.2s ease;
-        }
-        .country-selector-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
+        body { font-family: 'Sarabun', sans-serif; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        .sky-background { background: linear-gradient(170deg, #0f172a 0%, #1e293b 60%, #334155 100%); }
+        .glass-panel { background: rgba(30, 41, 59, 0.25); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
+        .glass-input { background: rgba(51, 65, 85, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 0.75rem; transition: all 0.2s ease; }
+        .glass-input:focus { background: rgba(71, 85, 105, 0.6); border-color: rgba(99, 102, 241, 0.8); box-shadow: none; outline: none; }
+        .custom-selector-panel { position: absolute; z-index: 50; top: 100%; left: 0; right: 0; margin-top: 0.5rem; animation: fadeIn 0.3s ease-out; }
+        #remote-video, #local-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        #remote-video { background-color: #111; }
+        .video-container { display: flex; width: 100%; height: 100%; }
+        .video-wrapper { position: relative; overflow: hidden; background-color: #111; }
+        .nickname-overlay { position: absolute; bottom: 1rem; left: 1rem; background: rgba(0,0,0,0.5); padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; color: white; }
+        @media (orientation: portrait) { .video-container { flex-direction: column; } .video-wrapper { width: 100%; height: 50%; } }
+        @media (orientation: landscape) { .video-container { flex-direction: row; } .video-wrapper { width: 50%; height: 100%; } }
+        #floating-chat-container { background: rgba(17, 24, 39, 0.75); border-top: 1px solid rgba(255, 255, 255, 0.1); border-right: 1px solid rgba(255, 255, 255, 0.1); border-top-right-radius: 1.5rem; }
+        .chat-message.faded-out { opacity: 0; transform: translateY(-10px); transition: all 0.5s ease; }
+        .themed-btn { border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #FFC107; box-shadow: 0 4px 10px rgba(0,0,0,0.2), inset 0 -4px 6px rgba(0,0,0,0.1); transition: all 0.2s ease-in-out; }
+        .themed-btn:hover { transform: scale(1.1); background-color: #FFD54F; }
+        .sun-loader { width: 80px; height: 80px; position: relative; animation: spin 10s linear infinite; }
+        .sun-loader .sun-body { width: 50px; height: 50px; background-color: #FFC107; border-radius: 50%; position: absolute; top: 15px; left: 15px; }
+        .sun-loader .sun-ray { background-color: #FFC107; width: 6px; height: 18px; border-radius: 3px; position: absolute; top: -3px; left: 37px; }
+        .sun-ray:nth-child(2) { transform: rotate(45deg); top: 8px; left: 58px; } .sun-ray:nth-child(3) { transform: rotate(90deg); top: 31px; left: 65px; } .sun-ray:nth-child(4) { transform: rotate(135deg); top: 54px; left: 58px; } .sun-ray:nth-child(5) { transform: rotate(180deg); top: 67px; left: 37px; } .sun-ray:nth-child(6) { transform: rotate(225deg); top: 54px; left: 16px; } .sun-ray:nth-child(7) { transform: rotate(270deg); top: 31px; left: 9px; } .sun-ray:nth-child(8) { transform: rotate(315deg); top: 8px; left: 16px; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
     </style>
-    
-    <!-- Final Firebase Config -->
-    <script>
-      const firebaseConfig = {
-        apiKey: "AIzaSyAyLE1l-eiPPW-fJIvL2uULmDWXcKRhoEM",
-        authDomain: "sunday-tv-videocall.firebaseapp.com",
-        projectId: "sunday-tv-videocall",
-        storageBucket: "sunday-tv-videocall.appspot.com",
-        messagingSenderId: "456379728267",
-        appId: "1:456379728267:web:815ef8f00b815e42172f8e"
-      };
-    </script>
-    
 </head>
-<body>
+<body class="h-screen w-screen overflow-hidden dark">
 
-    <!-- Country Selector Modal -->
-    <div id="country-modal" class="hidden fixed inset-0 bg-black/60 z-50 screen p-4">
-        <div class="w-full max-w-md h-[70vh] flex flex-col bg-gray-900/50 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-2xl">
-            <div class="flex-shrink-0 p-4 flex justify-between items-center border-b border-white/10">
-                <h2 id="country-modal-title" class="text-xl font-semibold text-white">เลือกประเทศ</h2>
-                <button id="close-country-modal-btn" class="text-white/70 hover:text-white transition"><i class="fa-solid fa-times text-2xl"></i></button>
-            </div>
-            <div class="flex-shrink-0 p-4">
-                <input id="country-search-input" type="text" placeholder="ค้นหาประเทศ (ไทย / English)..." class="w-full p-3 rounded-lg bg-white/10 text-white border-2 border-transparent focus:border-blue-400 focus:ring-0 transition placeholder:text-white/40">
-            </div>
-            <ul id="country-list" class="flex-grow overflow-y-auto p-4 space-y-2">
-                <!-- Country items will be populated by JS -->
-            </ul>
-        </div>
-    </div>
-
-    <!-- Cookie Consent Modal -->
-    <div id="cookie-consent-modal" class="hidden fixed inset-0 bg-black/60 z-50 screen">
-        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md text-center m-4">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">เราใช้คุกกี้เพื่อประสบการณ์ที่ดีขึ้น</h2>
-            <p class="text-gray-600 mb-6">เราใช้คุกกี้เพื่อบันทึกการตั้งค่าของคุณ เช่น ชื่อและประเทศที่เลือก เพื่อให้การใช้งานครั้งถัดไปสะดวกยิ่งขึ้น</p>
-            <button id="accept-cookie-button" class="w-full px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all">ยอมรับและดำเนินการต่อ</button>
-        </div>
-    </div>
-
-    <!-- Home Screen -->
-    <div id="home-screen" class="screen p-4">
-        <div class="w-full max-w-lg bg-gray-900/30 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl shadow-2xl text-center">
-            <img src="https://img2.pic.in.th/pic/sunday-TV.png" alt="โลโก้ Sunday TV" class="h-24 w-auto mx-auto mb-4" onerror="this.onerror=null; this.src='https://placehold.co/200x80/ffffff/000000?text=Sunday+TV';">
+    <!-- Page 1: Profile Setup Modal -->
+    <div id="profile-modal" class="hidden sky-background fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="glass-panel p-8 w-full max-w-md text-center">
+            <h2 class="text-3xl font-bold text-white mb-2">สร้างโปรไฟล์ของคุณ</h2>
+            <p class="text-gray-400 mb-8">ข้อมูลนี้จะแสดงให้เพื่อนของคุณเห็น</p>
             <div class="space-y-4 text-left">
-                <div><label for="userNameInput" class="block text-sm font-medium text-white/80 mb-1">ชื่อของคุณ</label><input type="text" id="userNameInput" placeholder="ใส่ชื่อเล่นของคุณ..." class="w-full p-3 rounded-lg bg-white/10 text-white border-2 border-transparent focus:border-blue-400 focus:ring-0 transition placeholder:text-white/40"></div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label for="my-country-selector" class="block text-sm font-medium text-white/80 mb-1">ประเทศของคุณ</label>
-                        <button id="my-country-selector" class="country-selector-btn w-full p-3 rounded-lg text-white text-left truncate"></button>
-                    </div>
-                    <div>
-                        <label for="partner-country-selector" class="block text-sm font-medium text-white/80 mb-1">คนที่อยากพบ</label>
-                        <button id="partner-country-selector" class="country-selector-btn w-full p-3 rounded-lg text-white text-left truncate"></button>
-                    </div>
+                <div> <label for="nickname-input" class="block mb-1 text-sm font-medium text-gray-300">ชื่อเล่น</label> <input type="text" id="nickname-input" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="ใส่ชื่อเล่นของคุณ"> </div>
+                <div> <label for="age-input" class="block mb-1 text-sm font-medium text-gray-300">อายุ</label> <input type="number" id="age-input" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="เช่น 25"> </div>
+                <div> <label for="gender-select" class="block mb-1 text-sm font-medium text-gray-300">เพศ</label> <select id="gender-select" class="w-full p-3 glass-input text-gray-200 focus:ring-0"> <option>ชาย</option> <option>หญิง</option> <option>LGBTQ</option> <option>สาวหล่อ</option> <option>เกย์</option> <option>กำหนดเอง</option> <option>ไม่ระบุ</option> </select> </div>
+                <div id="custom-gender-container" class="hidden space-y-4">
+                    <div> <label for="custom-gender-name-input" class="block mb-1 text-sm font-medium text-gray-300">ระบุเพศของคุณ</label> <input type="text" id="custom-gender-name-input" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="เช่น Non-binary"> </div>
+                    <div> <label for="custom-gender-emoji-input" class="block mb-1 text-sm font-medium text-gray-300">อิโมจิประจำตัว</label> <input type="text" id="custom-gender-emoji-input" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="ใส่ 1 อิโมจิ" maxlength="2"> </div>
                 </div>
             </div>
-            <div id="local-preview-container" class="hidden w-48 h-36 mx-auto mt-6 rounded-2xl overflow-hidden"><video id="local-preview-video" class="w-full h-full" autoplay playsinline muted></video></div>
-            <p id="home-status" class="text-white/70 mt-6 h-6"></p>
-            <button id="permission-button" class="mt-4 w-full px-10 py-4 bg-white text-xl font-semibold text-gray-800 rounded-full shadow-lg hover:bg-gray-200 transition-all transform hover:scale-105"><i class="fa-solid fa-camera mr-3"></i>อนุญาตให้ใช้กล้อง</button>
-            <button id="start-chat-button" class="hidden mt-4 w-full px-10 py-4 bg-gradient-to-r from-green-400 to-blue-500 text-xl font-semibold text-white rounded-full shadow-lg hover:from-green-500 hover:to-blue-600 transition-all transform hover:scale-105"><i class="fa-solid fa-play mr-3"></i>เริ่มแชท</button>
-            <div class="mt-8 text-white/50 text-xs"><p>แชร์ลิงก์ให้เพื่อน:</p><div class="mt-1 flex items-center justify-center bg-black/20 rounded-full p-1"><span id="website-url" class="px-3 truncate"></span><button id="copy-url-button" class="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-full text-white flex-shrink-0">คัดลอก</button></div></div>
+            <button id="save-profile-btn" class="w-full mt-8 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-200 active:scale-95 shadow-md">บันทึกและถัดไป</button>
         </div>
-    </div>
-
-    <!-- Chat Screen -->
-    <div id="chat-screen" class="screen hidden">
-        <div id="remote-video-container" class="video-container w-full h-1/2 lg:w-1/2 lg:h-full">
-            <video id="remoteVideo" autoplay playsinline></video>
-            <div id="remote-user-info" class="hidden absolute top-3 left-3 bg-black/40 px-3 py-1 rounded-full text-sm text-white font-medium"></div>
-            <div id="waiting-overlay" class="absolute inset-0 flex flex-col items-center justify-center text-white text-xl bg-black bg-opacity-50 z-20"><i class="fa-solid fa-satellite-dish text-5xl mb-4 animate-pulse"></i><p>กำลังค้นหาเพื่อนคุย...</p></div>
-        </div>
-        <div id="local-video-container" class="video-container w-full h-1/2 lg:w-1/2 lg:h-full">
-            <video id="localVideo" autoplay playsinline muted></video>
-        </div>
-        <div id="chat-controls" class="z-30"><button id="next-button" class="control-btn bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/50"><i class="fa-solid fa-forward-step"></i></button><button id="stop-button" class="control-btn bg-red-600 hover:bg-red-700 shadow-lg shadow-red-600/50"><i class="fa-solid fa-phone-slash"></i></button></div>
     </div>
     
-    <!-- Error Overlay -->
-    <div id="error-overlay" class="hidden fixed inset-0 screen bg-gray-800/90 z-50 p-8 text-center"><div class="max-w-md"><h2 id="error-title" class="text-4xl font-bold text-red-500 mb-4"></h2><p id="error-message" class="text-xl text-white/90 mb-6"></p><button onclick="window.location.reload()" class="px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg">ลองอีกครั้ง</button></div></div>
+    <!-- Page 2: Country Setup -->
+    <div id="country-setup-view" class="sky-background w-full h-full flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden hidden">
+        <div class="glass-panel p-8 w-full max-w-lg text-center fade-in">
+             <h2 class="text-3xl font-bold text-white mb-2">ตั้งค่าการค้นหา</h2>
+             <p class="text-gray-400 mb-8">เลือกประเทศเพื่อการจับคู่ที่ดียิ่งขึ้น</p>
+             <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div id="my-country-selector" class="relative">
+                     <label class="block mb-1 text-sm font-medium text-gray-300">ประเทศของคุณ</label>
+                     <button type="button" class="selector-btn w-full p-3 glass-input text-gray-200 flex items-center justify-between"></button>
+                 </div>
+                 <div id="partner-country-selector" class="relative">
+                     <label class="block mb-1 text-sm font-medium text-gray-300">ค้นหาเพื่อนจาก</label>
+                     <button type="button" class="selector-btn w-full p-3 glass-input text-gray-200 flex items-center justify-between"></button>
+                 </div>
+             </div>
+             <button id="save-countries-btn" class="w-full mt-8 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-200 active:scale-95 shadow-md">บันทึกและไปที่ล็อบบี้</button>
+        </div>
+    </div>
+
+    <!-- Page 3: Lobby / Start View -->
+    <div id="settings-view" class="sky-background w-full h-full flex flex-col p-4 sm:p-6 relative overflow-hidden hidden">
+        <header class="w-full max-w-7xl mx-auto flex justify-between items-center p-4 glass-panel mb-6">
+            <img src="https://img2.pic.in.th/pic/sunday-TV.png" alt="Sunday TV Logo" class="h-10 w-auto" onerror="this.style.display='none'">
+            <div class="flex items-center gap-4">
+                <button id="edit-profile-btn" class="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"><i class="bi bi-person-fill text-xl"></i> แก้ไขโปรไฟล์</button>
+                <button id="edit-countries-btn" class="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"><i class="bi bi-globe-americas text-xl"></i> ตั้งค่าประเทศ</button>
+            </div>
+        </header>
+        <main class="w-full max-w-7xl mx-auto flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
+            <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden">
+                <div class="glass-panel p-6 flex flex-col">
+                    <h2 class="text-2xl font-bold text-gray-200 mb-4 text-center flex-shrink-0">ออนไลน์ทั้งหมด</h2>
+                    <div id="online-users-list" class="flex-grow overflow-y-auto pr-2 space-y-3"></div>
+                </div>
+                <div class="glass-panel p-6 flex flex-col">
+                    <h2 class="text-2xl font-bold text-gray-200 mb-4 text-center flex-shrink-0">กำลังคุยกันอยู่</h2>
+                    <div id="paired-users-list" class="flex-grow overflow-y-auto pr-2 space-y-3"></div>
+                </div>
+            </div>
+            <div class="lg:col-span-1 glass-panel p-8 flex flex-col items-center justify-center">
+                 <h2 class="text-2xl font-bold text-gray-200 mb-4 text-center">พร้อมรึยัง?</h2>
+                 <p class="text-gray-400 mb-8 text-center">กดปุ่มเพื่อเริ่มค้นหาเพื่อนใหม่ได้เลย!</p>
+                 <button id="start-btn" class="w-48 h-48 bg-yellow-400 hover:bg-yellow-500 rounded-full flex flex-col items-center justify-center text-gray-800 font-bold text-2xl transition-transform duration-200 active:scale-95 shadow-lg" disabled>
+                    <div id="start-btn-content" class="text-center hidden">
+                        <i class="bi bi-play-fill text-7xl"></i>
+                        <span>เริ่มค้นหา</span>
+                    </div>
+                    <div id="start-btn-loading" class="text-center">
+                        <div class="text-lg">กำลังเชื่อมต่อ...</div>
+                    </div>
+                 </button>
+                 <div id="user-id-display" class="mt-4 text-xs text-gray-400 text-center"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading View -->
+    <div id="loading-view" class="hidden sky-background w-full h-full flex-col items-center justify-center text-center p-6">
+        <div class="sun-loader mb-8"> <div class="sun-body"></div> <div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div> </div>
+        <h2 class="text-3xl font-semibold text-white text-shadow">กำลังค้นหาเพื่อน...</h2>
+        <button id="cancel-search-btn" class="mt-12 bg-white/30 hover:bg-white/50 backdrop-blur-sm text-white font-bold py-3 px-8 rounded-full transition duration-300">ยกเลิก</button>
+    </div>
+
+    <!-- Chat View -->
+    <div id="chat-view" class="hidden w-full h-full bg-black relative">
+        <div class="video-container">
+            <div class="video-wrapper"><video id="remote-video" class="video-player" autoplay playsinline></video><div id="partner-nickname-display" class="nickname-overlay"></div></div>
+            <div class="video-wrapper"><video id="local-video" class="video-player" autoplay playsinline muted></video><div id="my-nickname-display" class="nickname-overlay"></div></div>
+        </div>
+        
+        <div class="absolute inset-0 flex flex-col pointer-events-none">
+            <div class="w-full p-4 flex justify-end pointer-events-auto">
+                <button id="fullscreen-btn" class="p-3 rounded-full bg-black/30 hover:bg-black/50 transition-colors"><i id="fullscreen-icon" class="bi bi-arrows-fullscreen text-white text-xl"></i></button>
+            </div>
+            <div class="flex-grow"></div>
+            <div class="w-full p-4 flex justify-between items-end pointer-events-auto">
+                <div id="floating-chat-container" class="w-80 max-h-[40vh] bg-gray-900/70 backdrop-blur-sm border border-white/10 rounded-t-2xl flex flex-col">
+                    <div class="p-3 border-b border-white/10 flex-shrink-0"><p id="partner-info" class="text-xs text-gray-300"></p></div>
+                    <div id="messages" class="flex-grow p-3 space-y-3 overflow-y-auto"></div>
+                    <div class="p-2 border-t border-white/10 flex-shrink-0"><div class="flex gap-2"><input type="text" id="chat-input" class="flex-grow p-2 glass-input text-gray-200 text-sm" placeholder="พิมพ์ข้อความ..."><button id="send-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold p-3 rounded-lg flex-shrink-0"><i class="bi bi-send-fill"></i></button></div></div>
+                </div>
+                <div class="flex items-center justify-center gap-6">
+                    <button id="stop-btn" class="themed-btn w-16 h-16 bg-red-500 hover:bg-red-600"><i class="bi bi-telephone-fill text-white text-2xl"></i></button>
+                    <button id="next-btn" class="themed-btn w-20 h-20"><i class="bi bi-arrow-right text-white text-5xl"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="alert-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="glass-panel p-6 w-full max-w-sm text-center text-gray-200">
+            <p id="alert-modal-message" class="text-lg mb-6"></p>
+            <button id="alert-modal-close" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-3 px-6 rounded-lg active:scale-95 transition-transform">เข้าใจแล้ว</button>
+        </div>
+    </div>
 
     <script type="module">
-        const ui = {
-            homeScreen: document.getElementById('home-screen'), chatScreen: document.getElementById('chat-screen'),
-            cookieModal: document.getElementById('cookie-consent-modal'), acceptCookieBtn: document.getElementById('accept-cookie-button'),
-            permissionBtn: document.getElementById('permission-button'), startChatBtn: document.getElementById('start-chat-button'),
-            homeStatus: document.getElementById('home-status'), previewContainer: document.getElementById('local-preview-container'),
-            previewVideo: document.getElementById('local-preview-video'), userNameInput: document.getElementById('userNameInput'),
-            myCountrySelector: document.getElementById('my-country-selector'), partnerCountrySelector: document.getElementById('partner-country-selector'),
-            remoteVideo: document.getElementById('remoteVideo'), localVideo: document.getElementById('localVideo'),
-            waitingOverlay: document.getElementById('waiting-overlay'), nextBtn: document.getElementById('next-button'),
-            stopBtn: document.getElementById('stop-button'), errorOverlay: document.getElementById('error-overlay'),
-            errorTitle: document.getElementById('error-title'), errorMessage: document.getElementById('error-message'),
-            websiteUrl: document.getElementById('website-url'), copyUrlBtn: document.getElementById('copy-url-button'),
-            countryModal: document.getElementById('country-modal'), countryModalTitle: document.getElementById('country-modal-title'),
-            closeCountryModalBtn: document.getElementById('close-country-modal-btn'), countrySearchInput: document.getElementById('country-search-input'),
-            countryList: document.getElementById('country-list'),
-            remoteUserInfo: document.getElementById('remote-user-info'),
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, query, serverTimestamp, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+        // IMPORTANT: Make sure to set up Firestore Security Rules in your Firebase console
+        // to prevent unauthorized access to your data.
+        const firebaseConfig = {
+            apiKey: "AIzaSyAyLE1l-eiPPW-fJIvL2uULmDWXcKRhoEM",
+            authDomain: "sunday-tv-videocall.firebaseapp.com",
+            projectId: "sunday-tv-videocall",
+            storageBucket: "sunday-tv-videocall.firebasestorage.app",
+            messagingSenderId: "456379728267",
+            appId: "1:456379728267:web:815ef8f00b815e42172f8e",
         };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const presenceCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/presence`);
 
-        function showScreen(screen) { ui.homeScreen.classList.add('hidden'); ui.chatScreen.classList.add('hidden'); screen.classList.remove('hidden'); }
-        function displayError(title, message) { ui.errorTitle.textContent = title; ui.errorMessage.textContent = message; ui.errorOverlay.classList.remove('hidden'); }
-        function setCookie(name, value, days) { let expires = ""; if (days) { const date = new Date(); date.setTime(date.getTime() + (days*24*60*60*1000)); expires = "; expires=" + date.toUTCString(); } document.cookie = name + "=" + (value || "")  + expires + "; path=/; SameSite=Lax"; }
-        function getCookie(name) { const nameEQ = name + "="; const ca = document.cookie.split(';'); for(let i=0; i < ca.length; i++) { let c = ca[i]; while (c.charAt(0)==' ') c = c.substring(1,c.length); if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length); } return null; }
+        // IMPROVEMENT: Centralize application state for better management.
+        const state = {
+            localStream: null,
+            currentCall: null,
+            currentDataConnection: null,
+            peer: null,
+            userId: null,
+            searchTimeout: null,
+            heartbeatInterval: null,
+            allCountries: [],
+            onlineUsers: new Map(),
+            settings: { nickname: '', age: '', gender: '', myCountry: 'TH', partnerCountry: 'worldwide', customGenderName: '', customGenderEmoji: '' },
+        };
+        
+        let selectorUpdaters = {};
 
-        if (!window.isSecureContext) { displayError('การเชื่อมต่อไม่ปลอดภัย', 'เบราว์เซอร์ต้องการ HTTPS ที่ปลอดภัยเพื่อใช้งานกล้องและไมโครโฟน'); }
-        else if (typeof firebaseConfig === 'undefined' || !firebaseConfig.apiKey) { displayError('การตั้งค่าไม่สมบูรณ์', 'ไม่พบการตั้งค่าที่จำเป็นสำหรับเชื่อมต่อกับเซิร์ฟเวอร์ (Firebase config)'); }
-        else {
-            if (getCookie("cookieConsent") !== "true") { ui.cookieModal.classList.remove('hidden'); } 
-            else { initialize(); }
+        // Centralized UI elements object.
+        const ui = {
+            profileModal: document.getElementById('profile-modal'), nicknameInput: document.getElementById('nickname-input'),
+            ageInput: document.getElementById('age-input'), genderSelect: document.getElementById('gender-select'),
+            customGenderContainer: document.getElementById('custom-gender-container'),
+            customGenderNameInput: document.getElementById('custom-gender-name-input'),
+            customGenderEmojiInput: document.getElementById('custom-gender-emoji-input'),
+            saveProfileBtn: document.getElementById('save-profile-btn'),
+            countrySetupView: document.getElementById('country-setup-view'),
+            saveCountriesBtn: document.getElementById('save-countries-btn'),
+            settingsView: document.getElementById('settings-view'), loadingView: document.getElementById('loading-view'),
+            chatView: document.getElementById('chat-view'), startBtn: document.getElementById('start-btn'),
+            startBtnContent: document.getElementById('start-btn-content'), startBtnLoading: document.getElementById('start-btn-loading'),
+            editProfileBtn: document.getElementById('edit-profile-btn'),
+            editCountriesBtn: document.getElementById('edit-countries-btn'),
+            cancelSearchBtn: document.getElementById('cancel-search-btn'),
+            stopBtn: document.getElementById('stop-btn'), nextBtn: document.getElementById('next-btn'),
+            localVideo: document.getElementById('local-video'), remoteVideo: document.getElementById('remote-video'),
+            userIdDisplay: document.getElementById('user-id-display'), alertModal: document.getElementById('alert-modal'),
+            alertModalMessage: document.getElementById('alert-modal-message'), alertModalClose: document.getElementById('alert-modal-close'),
+            onlineUsersList: document.getElementById('online-users-list'),
+            pairedUsersList: document.getElementById('paired-users-list'),
+            myNicknameDisplay: document.getElementById('my-nickname-display'),
+            partnerNicknameDisplay: document.getElementById('partner-nickname-display'),
+            chatPanel: {
+                messages: document.getElementById('messages'), input: document.getElementById('chat-input'),
+                sendBtn: document.getElementById('send-btn'), partnerInfo: document.getElementById('partner-info'),
+            },
+            fullscreenBtn: document.getElementById('fullscreen-btn'),
+            fullscreenIcon: document.getElementById('fullscreen-icon'),
+        };
+        
+        // --- UTILITY FUNCTIONS ---
+        const setCookie = (name, value, days = 365) => { 
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = `${name}=${encodeURIComponent(value || "")}${expires}; path=/; SameSite=Lax`; 
+        };
+        const getCookie = (name) => { const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)'); return v ? decodeURIComponent(v[2]) : null; };
+        const showAlert = (message) => { ui.alertModalMessage.textContent = message; ui.alertModal.classList.add('flex'); ui.alertModal.classList.remove('hidden'); };
+        
+        const genderEmojiMap = { 'ชาย': '🧒🏻', 'หญิง': '🧑🏻', 'LGBTQ': '💃🏻', 'สาวหล่อ': '🧑🏻‍🚀', 'เกย์': '🧑🏻‍⚕️', 'ไม่ระบุ': '🌻' };
+        const getGenderEmoji = (gender, customEmoji) => {
+            if (gender === 'กำหนดเอง' && customEmoji) return customEmoji;
+            return genderEmojiMap[gender] || '🤔';
+        };
+        const getFlagEmoji = (countryCode) => {
+            if (countryCode === 'worldwide') return '🌍';
+            return countryCode ? countryCode.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397)) : '🌐';
+        }
+
+        // --- VIEW MANAGEMENT ---
+        function showView(viewId) {
+            ['profile-modal', 'country-setup-view', 'settings-view', 'loading-view', 'chat-view'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.style.display = (id === viewId) ? 'flex' : 'none';
+                    if (id === viewId && (id === 'profile-modal' || id === 'country-setup-view' || id === 'loading-view')) {
+                         el.classList.add('flex-col', 'items-center', 'justify-center');
+                    }
+                }
+            });
         }
         
-        ui.acceptCookieBtn.onclick = () => { setCookie("cookieConsent", "true", 365); ui.cookieModal.classList.add('hidden'); initialize(); };
+        // --- UI COMPONENTS ---
+        function createCustomSelector(containerId, options) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const btn = container.querySelector('.selector-btn');
+            
+            if (!btn.querySelector('.selector-label')) {
+                btn.innerHTML = `<span class="selector-label flex items-center"></span><svg class="selector-arrow w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>`;
+                const panelDiv = document.createElement('div');
+                panelDiv.className = 'custom-selector-panel glass-panel p-2 shadow-xl hidden';
+                panelDiv.innerHTML = `<div class="relative p-2"><input type="text" placeholder="ค้นหา..." class="selector-search w-full pl-4 pr-4 py-2 glass-input text-gray-200 focus:ring-0"></div><ul class="selector-list max-h-60 overflow-y-auto"></ul>`;
+                container.appendChild(panelDiv);
+            }
+            
+            const label = container.querySelector('.selector-label');
+            const arrow = container.querySelector('.selector-arrow');
+            const panel = container.querySelector('.custom-selector-panel');
+            const searchInput = container.querySelector('.selector-search');
+            const list = container.querySelector('.selector-list');
 
-        let initializeApp, getAuth, signInAnonymously, onAuthStateChanged;
-        let getFirestore, doc, collection, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs, addDoc;
-        let db, auth, localStream, peerConnection, currentRoomId, userId;
-        let roomUnsubscribe, candidatesUnsubscribe;
-        let allCountries = [];
-        let currentCountrySelector = null;
-        
-        const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-        const roomsCollectionPath = `artifacts/${firebaseConfig.projectId}/public/data/rooms`;
+            const updateSelectionDisplay = (value) => {
+                const country = state.allCountries.find(c => c.alpha2 === value) || { name: 'ทั่วโลก', alpha2: 'worldwide' };
+                label.innerHTML = `<span class="text-xl mr-3">${getFlagEmoji(country.alpha2)}</span> ${country.name}`;
+            };
 
-        async function fetchCountries() {
+            const renderList = (filter = '') => {
+                list.innerHTML = '';
+                const lowerFilter = filter.toLowerCase();
+                let currentCountries = options.isPartner ? [{ name: '🌍 ทั่วโลก', alpha2: 'worldwide', enName: 'Worldwide' }, ...state.allCountries] : state.allCountries;
+                
+                const filtered = currentCountries.filter(c => c.name.toLowerCase().includes(lowerFilter) || (c.enName && c.enName.toLowerCase().includes(lowerFilter)) || c.alpha2.toLowerCase().includes(lowerFilter));
+
+                if (filtered.length === 0) {
+                    list.innerHTML = `<li class="p-3 text-center text-gray-400">ไม่พบประเทศ</li>`;
+                    return;
+                }
+
+                filtered.forEach(country => {
+                    const li = document.createElement('li');
+                    li.className = 'p-3 flex items-center rounded-lg cursor-pointer hover:bg-white/10 transition-colors text-gray-200';
+                    li.dataset.value = country.alpha2;
+                    li.innerHTML = `<span class="text-xl mr-3">${getFlagEmoji(country.alpha2)}</span> ${country.name}`;
+                    list.appendChild(li);
+                });
+            };
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = panel.classList.contains('hidden');
+                document.querySelectorAll('.custom-selector-panel').forEach(p => p.classList.add('hidden'));
+                if(isHidden) {
+                    panel.classList.remove('hidden');
+                    arrow.classList.add('rotate-180');
+                    renderList();
+                    searchInput.value = '';
+                    searchInput.focus();
+                } else {
+                    arrow.classList.remove('rotate-180');
+                }
+            });
+
+            searchInput.addEventListener('keyup', () => renderList(searchInput.value));
+
+            list.addEventListener('click', (e) => {
+                const li = e.target.closest('li');
+                if (li && li.dataset.value) {
+                    const newValue = li.dataset.value;
+                    options.setter(newValue);
+                    updateSelectionDisplay(newValue);
+                    panel.classList.add('hidden');
+                    arrow.classList.remove('rotate-180');
+                }
+            });
+            
+            selectorUpdaters[containerId] = () => updateSelectionDisplay(options.getter());
+            selectorUpdaters[containerId]();
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.relative')) {
+                document.querySelectorAll('.custom-selector-panel').forEach(p => p.classList.add('hidden'));
+                document.querySelectorAll('.selector-arrow').forEach(a => a.classList.remove('rotate-180'));
+            }
+        });
+
+        // --- DATA & STATE LOGIC ---
+        async function loadCountries() {
             try {
                 const response = await fetch('https://raw.githubusercontent.com/ponlawat-w/country-list-th/refs/heads/master/country-list-th.json');
-                if (!response.ok) throw new Error('Network response was not ok');
-                allCountries = await response.json();
-            } catch (error) {
-                console.error("Could not fetch country list:", error);
-                allCountries = [{ name: 'ไทย', enName: 'Thailand', alpha2: 'TH' }]; // Fallback
-            }
-        }
-
-        function openCountryModal(selectorType) {
-            currentCountrySelector = selectorType;
-            ui.countryModalTitle.textContent = selectorType === 'my' ? 'เลือกประเทศของคุณ' : 'เลือกประเทศที่อยากพบ';
-            populateCountryList();
-            ui.countryModal.classList.remove('hidden');
-            ui.countrySearchInput.value = '';
-            ui.countrySearchInput.focus();
-        }
-
-        function closeCountryModal() {
-            ui.countryModal.classList.add('hidden');
-        }
-
-        function populateCountryList(filter = '') {
-            ui.countryList.innerHTML = '';
-            const lowerCaseFilter = filter.toLowerCase();
-            const listFragment = document.createDocumentFragment();
-
-            if (currentCountrySelector === 'partner') {
-                const worldwideItem = document.createElement('li');
-                worldwideItem.className = 'p-3 text-white rounded-lg hover:bg-white/10 cursor-pointer';
-                worldwideItem.textContent = 'ทั่วโลก';
-                worldwideItem.onclick = () => updateCountrySelection('worldwide', 'ทั่วโลก');
-                if ('ทั่วโลก'.includes(lowerCaseFilter)) listFragment.appendChild(worldwideItem);
-            }
-
-            const filteredCountries = allCountries.filter(c => c.name.toLowerCase().includes(lowerCaseFilter) || c.enName.toLowerCase().includes(lowerCaseFilter));
-            filteredCountries.forEach(c => {
-                const item = document.createElement('li');
-                item.className = 'p-3 text-white rounded-lg hover:bg-white/10 cursor-pointer';
-                item.textContent = `${c.name} (${c.enName})`;
-                item.onclick = () => updateCountrySelection(c.alpha2, c.name);
-                listFragment.appendChild(item);
-            });
-            ui.countryList.appendChild(listFragment);
-        }
-
-        function updateCountrySelection(code, name) {
-            const selectorBtn = currentCountrySelector === 'my' ? ui.myCountrySelector : ui.partnerCountrySelector;
-            selectorBtn.textContent = name;
-            selectorBtn.dataset.code = code;
-            closeCountryModal();
-        }
-
-        function loadSettings() {
-            ui.userNameInput.value = getCookie("userName") || '';
-            const myCountryCode = getCookie("myCountry") || 'TH';
-            const partnerCountryCode = getCookie("partnerCountry") || 'worldwide';
-            
-            const myCountry = allCountries.find(c => c.alpha2 === myCountryCode) || allCountries.find(c => c.alpha2 === 'TH');
-            ui.myCountrySelector.textContent = myCountry.name;
-            ui.myCountrySelector.dataset.code = myCountry.alpha2;
-
-            if (partnerCountryCode === 'worldwide') {
-                ui.partnerCountrySelector.textContent = 'ทั่วโลก';
-                ui.partnerCountrySelector.dataset.code = 'worldwide';
-            } else {
-                const partnerCountry = allCountries.find(c => c.alpha2 === partnerCountryCode);
-                if (partnerCountry) {
-                    ui.partnerCountrySelector.textContent = partnerCountry.name;
-                    ui.partnerCountrySelector.dataset.code = partnerCountry.alpha2;
-                }
-            }
+                if (!response.ok) throw new Error(`HTTP error`);
+                state.allCountries = await response.json();
+                state.allCountries.sort((a, b) => a.name.localeCompare(b.name, 'th'));
+                createCustomSelector('my-country-selector', { getter: () => state.settings.myCountry, setter: (v) => state.settings.myCountry = v, isPartner: false });
+                createCustomSelector('partner-country-selector', { getter: () => state.settings.partnerCountry, setter: (v) => state.settings.partnerCountry = v, isPartner: true });
+            } catch (error) { console.error("Country load failed:", error); showAlert("ไม่สามารถโหลดรายชื่อประเทศได้"); }
         }
         
-        function saveSettings() {
-            setCookie("userName", ui.userNameInput.value, 365);
-            setCookie("myCountry", ui.myCountrySelector.dataset.code, 365);
-            setCookie("partnerCountry", ui.partnerCountrySelector.dataset.code, 365);
-        }
-
-        async function initialize() {
-            await fetchCountries();
-            loadSettings();
-            ui.websiteUrl.textContent = window.location.href; // Show full URL
-            try {
-                ({ initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"));
-                ({ getAuth, signInAnonymously, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"));
-                ({ getFirestore, doc, collection, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs, addDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"));
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app); auth = getAuth(app);
-                onAuthStateChanged(auth, user => { if (user) { userId = user.uid; } });
-                await signInAnonymously(auth);
-            } catch (error) { displayError('การเชื่อมต่อล้มเหลว', `ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้: ${error.message}`); }
-        }
-
-        ui.permissionBtn.onclick = async () => {
-            if (!ui.userNameInput.value) { ui.homeStatus.textContent = "กรุณาใส่ชื่อของคุณก่อน"; ui.userNameInput.focus(); return; }
-            ui.permissionBtn.disabled = true; ui.homeStatus.textContent = "กำลังขออนุญาต...";
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                ui.previewVideo.srcObject = localStream;
-                ui.previewContainer.classList.remove('hidden'); ui.permissionBtn.classList.add('hidden');
-                ui.startChatBtn.classList.remove('hidden'); ui.homeStatus.textContent = "กล้องพร้อมใช้งานแล้ว!";
-            } catch (error) { ui.homeStatus.textContent = "โปรดอนุญาตให้เข้าถึงกล้องและไมโครโฟน"; ui.permissionBtn.disabled = false; }
+        const updatePresence = async (status, peerId = null, talkingTo = null) => {
+            if (!state.userId) return;
+            const data = { status, last_seen: serverTimestamp(), ...state.settings };
+            if (peerId) data.peerId = peerId;
+            data.talkingTo = talkingTo;
+            await setDoc(doc(presenceCollection, state.userId), data, { merge: true });
+        };
+        
+        const listenForOnlineUsers = () => {
+            const q = query(presenceCollection);
+            onSnapshot(q, (snapshot) => {
+                const thirtySecondsAgo = Date.now() - 30000;
+                const currentOnlineUsers = new Map();
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    if (data.last_seen && data.last_seen.toMillis() > thirtySecondsAgo) {
+                       currentOnlineUsers.set(doc.id, data);
+                    }
+                });
+                state.onlineUsers = currentOnlineUsers;
+                displayOnlineUsers();
+                displayPairedUsers();
+            });
+        };
+        
+        // --- UI RENDERING ---
+        const displayOnlineUsers = () => {
+            const onlineList = Array.from(state.onlineUsers.entries())
+                .filter(([id, data]) => id !== state.userId && data.status !== 'busy');
+            
+            if (onlineList.length === 0) {
+                ui.onlineUsersList.innerHTML = `<div class="text-center text-gray-400 p-4"><p>ไม่มีใครออนไลน์อยู่</p></div>`;
+                return;
+            }
+            ui.onlineUsersList.innerHTML = onlineList.map(([id, user]) => {
+                const flag = getFlagEmoji(user.myCountry);
+                const genderEmoji = getGenderEmoji(user.gender, user.customGenderEmoji);
+                const genderText = user.gender === 'กำหนดเอง' ? user.customGenderName : user.gender;
+                return `<div class="flex items-center p-3 rounded-lg bg-slate-800/50">
+                    <span class="text-3xl mr-2">${genderEmoji}</span>
+                    <span class="text-3xl mr-4">${flag}</span>
+                    <div>
+                        <p class="font-bold text-white">${user.nickname || 'Anonymous'}</p>
+                        <p class="text-xs text-gray-400">เพศ ${genderText}, อายุ ${user.age}</p>
+                    </div>
+                    <span class="ml-auto w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
+                </div>`;
+            }).join('');
         };
 
-        ui.startChatBtn.onclick = async () => { saveSettings(); showScreen(ui.chatScreen); ui.localVideo.srcObject = localStream; await findOrCreateRoom(); };
-        
-        async function findOrCreateRoom() {
-            ui.waitingOverlay.style.display = 'flex';
-            const partnerCountry = ui.partnerCountrySelector.dataset.code;
-            const q = query(collection(db, roomsCollectionPath), where('status', '==', 'waiting'));
-            const querySnapshot = await getDocs(q);
-            const availableRoom = querySnapshot.docs.find(doc => { const data = doc.data(); return data.callerId !== userId && (partnerCountry === 'worldwide' || data.country === partnerCountry); });
-            if (availableRoom) { await joinRoom(availableRoom.id, availableRoom.data()); } 
-            else { await createRoom(); }
-        }
-        
-        async function createRoom() {
-            const roomRef = doc(collection(db, roomsCollectionPath));
-            currentRoomId = roomRef.id; peerConnection = createPeerConnection();
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            await setDoc(roomRef, { callerId: userId, callerName: ui.userNameInput.value, country: ui.myCountrySelector.dataset.code, offer: { type: offer.type, sdp: offer.sdp }, status: 'waiting' });
-            listenForAnswer(roomRef);
-        }
-        
-        async function joinRoom(roomId, roomData) {
-            currentRoomId = roomId; const roomRef = doc(db, roomsCollectionPath, roomId);
-            peerConnection = createPeerConnection();
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp }, calleeId: userId, calleeName: ui.userNameInput.value, status: 'connected' });
-            listenForAnswer(roomRef); // Re-use listener to get final connected state
-        }
-        
-        function createPeerConnection() {
-            const pc = new RTCPeerConnection(servers);
-            pc.onicecandidate = e => { if (e.candidate && currentRoomId) { addDoc(collection(db, roomsCollectionPath, currentRoomId, 'candidates'), e.candidate.toJSON()); } };
-            pc.ontrack = e => { if (e.streams && e.streams[0]) { ui.remoteVideo.srcObject = e.streams[0]; ui.waitingOverlay.style.display = 'none'; } };
-            pc.onconnectionstatechange = () => { if (peerConnection && ['disconnected', 'closed', 'failed'].includes(peerConnection.connectionState)) { hangUp(true); } };
-            return pc;
-        }
-        
-        function listenForAnswer(roomRef) { 
-            roomUnsubscribe = onSnapshot(roomRef, async (snapshot) => { 
-                const data = snapshot.data(); 
-                if (!data) { return; } // Room deleted
-                
-                if (data.status === 'connected') {
-                    const partnerName = data.callerId === userId ? data.calleeName : data.callerName;
-                    ui.remoteUserInfo.textContent = `กำลังคุยกับ: ${partnerName || 'เพื่อนใหม่'}`;
-                    ui.remoteUserInfo.classList.remove('hidden');
+        const displayPairedUsers = () => {
+            const pairedList = [];
+            const processed = new Set();
+            state.onlineUsers.forEach((userA, idA) => {
+                if (userA.status === 'busy' && userA.talkingTo && !processed.has(idA)) {
+                    const userB = state.onlineUsers.get(userA.talkingTo);
+                    if (userB && userB.talkingTo === idA) {
+                        pairedList.push({userA, userB});
+                        processed.add(idA);
+                        processed.add(userA.talkingTo);
+                    }
                 }
+            });
 
-                if (data.answer && peerConnection && !peerConnection.currentRemoteDescription) { 
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); 
-                    listenForIceCandidates(roomRef); 
-                } 
-            }); 
-        }
+            if (pairedList.length === 0) {
+                ui.pairedUsersList.innerHTML = `<div class="text-center text-gray-400 p-4"><p>ยังไม่มีใครคุยกัน</p></div>`;
+                return;
+            }
 
-        function listenForIceCandidates(roomRef) { candidatesUnsubscribe = onSnapshot(collection(db, roomsCollectionPath, currentRoomId, 'candidates'), (snapshot) => { snapshot.docChanges().forEach(async (change) => { if (change.type === 'added' && peerConnection.remoteDescription) { await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); } }); }); }
+            ui.pairedUsersList.innerHTML = pairedList.map(({userA, userB}) => {
+                return `<div class="flex items-center justify-center p-3 rounded-lg bg-slate-800/50 gap-2">
+                    <div class="flex items-center gap-2"><span class="text-2xl">${getGenderEmoji(userA.gender, userA.customGenderEmoji)}</span><span class="text-white text-sm">${userA.nickname || '...'}</span></div>
+                    <i class="bi bi-heart-fill text-red-500 text-xl"></i>
+                    <div class="flex items-center gap-2"><span class="text-white text-sm">${userB.nickname || '...'}</span><span class="text-2xl">${getGenderEmoji(userB.gender, userB.customGenderEmoji)}</span></div>
+                </div>`;
+            }).join('');
+        };
+
+        // --- CORE APP LOGIC ---
+        const resetToSettings = () => {
+            showView('settings-view');
+            if (selectorUpdaters['my-country-selector']) selectorUpdaters['my-country-selector']();
+            if (selectorUpdaters['partner-country-selector']) selectorUpdaters['partner-country-selector']();
+        };
+
+        const hangUp = async (findNext = false) => {
+            clearTimeout(state.searchTimeout);
+            if (state.currentCall) state.currentCall.close();
+            if (state.currentDataConnection) state.currentDataConnection.close();
+            if (state.localStream) state.localStream.getTracks().forEach(track => track.stop());
+            
+            state.localStream = state.currentCall = state.currentDataConnection = null;
+            if(ui.remoteVideo) ui.remoteVideo.srcObject = null;
+            if(ui.localVideo) ui.localVideo.srcObject = null;
+            
+            if (state.peer && !state.peer.destroyed) {
+                await updatePresence('online', state.peer.id, null);
+            }
+
+            if (findNext) await startSearch();
+            else resetToSettings();
+        };
         
-        async function hangUp(isAbrupt = false) {
-             if (roomUnsubscribe) roomUnsubscribe(); if (candidatesUnsubscribe) candidatesUnsubscribe();
-             if (peerConnection) { peerConnection.close(); peerConnection = null; }
-             if (currentRoomId) { await deleteDoc(doc(db, roomsCollectionPath, currentRoomId)).catch(console.error); currentRoomId = null; }
-             
-             ui.remoteUserInfo.classList.add('hidden'); // Hide partner name
+        const switchToChatView = (stream) => {
+            showView('chat-view');
+            ui.remoteVideo.srcObject = stream;
+            ui.chatPanel.messages.innerHTML = '';
+            ui.chatPanel.partnerInfo.textContent = 'กำลังรอข้อมูลโปรไฟล์...';
+            ui.partnerNicknameDisplay.textContent = 'คู่สนทนา';
+        };
 
-             if (!isAbrupt) {
-                if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
-                ui.remoteVideo.srcObject = null; ui.previewVideo.srcObject = null;
-                ui.previewContainer.classList.add('hidden'); ui.startChatBtn.classList.add('hidden');
-                ui.permissionBtn.classList.remove('hidden'); ui.permissionBtn.disabled = false;
-                showScreen(ui.homeScreen);
-             }
-        }
+        const startSearch = async () => {
+            if (ui.startBtn.disabled) return;
+            showView('loading-view');
+            
+            try {
+                state.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                ui.localVideo.srcObject = state.localStream;
+            } catch (error) { showAlert("กรุณาอนุญาตให้เข้าถึงกล้องและไมโครโฟน"); resetToSettings(); return; }
+
+            await updatePresence('waiting', state.peer.id, null);
+            
+            // More robust matching logic.
+            const availablePeers = Array.from(state.onlineUsers.entries())
+                .filter(([id, data]) => 
+                    id !== state.userId && 
+                    data.status === 'waiting' && 
+                    data.peerId && 
+                    (state.settings.partnerCountry === 'worldwide' || data.myCountry === state.settings.partnerCountry) &&
+                    (state.settings.myCountry === 'worldwide' || data.partnerCountry === 'worldwide' || data.partnerCountry === state.settings.myCountry)
+                );
+            
+            if (availablePeers.length > 0) {
+                const [partnerUserId, partnerData] = availablePeers[Math.floor(Math.random() * availablePeers.length)];
+                
+                // STABILITY: Immediately mark self as busy to prevent race conditions.
+                await updatePresence('busy', state.peer.id, partnerUserId);
+                connectToPeer(partnerData.peerId, partnerUserId);
+            } else {
+                state.searchTimeout = setTimeout(() => { showAlert("ไม่พบผู้ใช้งานในขณะนี้ กรุณาลองใหม่อีกครั้ง"); hangUp(false); }, 20000);
+            }
+        };
         
-        ui.stopBtn.onclick = () => hangUp(false);
-        ui.nextBtn.onclick = async () => { await hangUp(true); await findOrCreateRoom(); };
-        ui.copyUrlBtn.onclick = () => { const urlToCopy = ui.websiteUrl.textContent; navigator.clipboard.writeText(urlToCopy).then(() => { ui.copyUrlBtn.textContent = "คัดลอกแล้ว!"; setTimeout(() => { ui.copyUrlBtn.textContent = "คัดลอก"; }, 2000); }).catch(err => { console.error('Could not copy text: ', err); }); };
-        ui.myCountrySelector.onclick = () => openCountryModal('my');
-        ui.partnerCountrySelector.onclick = () => openCountryModal('partner');
-        ui.closeCountryModalBtn.onclick = closeCountryModal;
-        ui.countrySearchInput.oninput = (e) => populateCountryList(e.target.value);
+        const connectToPeer = (peerId, partnerUserId) => {
+            const call = state.peer.call(peerId, state.localStream, { metadata: { userId: state.userId } });
+            const dataConnection = state.peer.connect(peerId, { metadata: { userId: state.userId } });
+            handleCall(call, partnerUserId);
+            handleDataConnection(dataConnection);
+        };
+
+        const handleCall = (call, partnerUserId) => {
+            call.on('stream', (remoteStream) => {
+                updatePresence('busy', state.peer.id, partnerUserId);
+                clearTimeout(state.searchTimeout);
+                switchToChatView(remoteStream);
+            });
+            call.on('close', () => hangUp(true));
+            call.on('error', (err) => { console.error('Call error:', err); hangUp(true); });
+            state.currentCall = call;
+        };
+
+        const handleDataConnection = (conn) => {
+            conn.on('open', () => {
+                conn.send({ type: 'profile', payload: state.settings });
+            });
+            conn.on('data', (data) => {
+                if (data.type === 'profile') {
+                    const { nickname, age, gender, customGenderName, myCountry } = data.payload;
+                    const countryName = state.allCountries.find(c => c.alpha2 === myCountry)?.name || myCountry;
+                    const genderText = gender === 'กำหนดเอง' ? customGenderName : gender;
+                    ui.chatPanel.partnerInfo.textContent = `คุยกับ: เพศ ${genderText}, อายุ ${age}, จาก ${countryName}`;
+                    ui.partnerNicknameDisplay.textContent = nickname || 'คู่สนทนา';
+                } else if (data.type === 'chat') {
+                    appendMessage(data.payload, 'partner');
+                }
+            });
+            state.currentDataConnection = conn;
+        };
+        
+        const appendMessage = (text, sender) => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message flex transition-all duration-500 ${sender === 'me' ? 'justify-end' : 'justify-start'}`;
+            const p = document.createElement('p');
+            p.textContent = text;
+            p.className = `px-3 py-2 rounded-lg max-w-xs ${sender === 'me' ? 'bg-indigo-500 text-white' : 'bg-gray-700 text-gray-200'}`;
+            messageDiv.appendChild(p);
+            ui.chatPanel.messages.appendChild(messageDiv);
+            ui.chatPanel.messages.scrollTop = ui.chatPanel.messages.scrollHeight;
+
+            const maxMessages = 10;
+            while (ui.chatPanel.messages.children.length > maxMessages) {
+                const firstMessage = ui.chatPanel.messages.firstChild;
+                firstMessage.classList.add('faded-out');
+                setTimeout(() => firstMessage.remove(), 500);
+            }
+        };
+        
+        const sendChatMessage = () => {
+            const message = ui.chatPanel.input.value.trim();
+            if (message && state.currentDataConnection) {
+                state.currentDataConnection.send({ type: 'chat', payload: message });
+                appendMessage(message, 'me');
+                ui.chatPanel.input.value = '';
+            }
+        };
+
+        const initializePeer = () => {
+            if (state.peer && !state.peer.destroyed) state.peer.destroy();
+            
+            state.peer = new Peer();
+            state.peer.on('open', async (id) => {
+                console.log('PeerJS connection established. New ID is: ' + id);
+                ui.startBtn.disabled = false;
+                ui.startBtnContent.classList.remove('hidden');
+                ui.startBtnLoading.classList.add('hidden');
+                
+                await updatePresence('online', id, null);
+                if (state.heartbeatInterval) clearInterval(state.heartbeatInterval);
+                state.heartbeatInterval = setInterval(() => updatePresence('online', id, state.currentCall ? state.currentCall.peer : null), 15000);
+            });
+            state.peer.on('connection', (conn) => {
+                clearTimeout(state.searchTimeout);
+                let partnerUserId = conn.metadata.userId;
+                updatePresence('busy', state.peer.id, partnerUserId);
+                handleDataConnection(conn);
+            });
+            state.peer.on('call', async (call) => {
+                try {
+                    state.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    ui.localVideo.srcObject = state.localStream;
+                    call.answer(state.localStream);
+                    let partnerUserId = call.metadata.userId;
+                    handleCall(call, partnerUserId);
+                } catch (err) { console.error('Failed to get local stream for incoming call', err); }
+            });
+            state.peer.on('error', (err) => { console.error('PeerJS error:', err); showAlert(`การเชื่อมต่อขัดข้อง (โค้ด: ${err.type}). กำลังพยายามเชื่อมต่อใหม่...`); setTimeout(initializePeer, 3000); });
+            state.peer.on('disconnected', () => { 
+                console.log("Peer disconnected. Attempting to reconnect..."); 
+                ui.startBtn.disabled = true;
+                ui.startBtnContent.classList.add('hidden');
+                ui.startBtnLoading.classList.remove('hidden');
+                state.peer.reconnect(); 
+            });
+            state.peer.on('close', () => { clearInterval(state.heartbeatInterval); });
+        };
+
+        // --- INITIALIZATION & EVENT LISTENERS ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                state.userId = user.uid;
+                ui.userIdDisplay.textContent = `ID: ${state.userId.substring(0, 12)}...`;
+                initializePeer();
+                listenForOnlineUsers();
+            } else {
+                await signInAnonymously(auth).catch(err => console.error("Anonymous sign-in failed", err));
+            }
+        });
+
+        const loadAllSettingsFromCookies = () => {
+            state.settings.nickname = getCookie('userNickname');
+            state.settings.age = getCookie('userAge');
+            state.settings.gender = getCookie('userGender');
+            state.settings.customGenderName = getCookie('userCustomGenderName');
+            state.settings.customGenderEmoji = getCookie('userCustomGenderEmoji');
+            state.settings.myCountry = getCookie('myCountry') || 'TH';
+            state.settings.partnerCountry = getCookie('partnerCountry') || 'worldwide';
+        };
+
+        const checkProfileAndInitialize = async () => {
+            loadAllSettingsFromCookies();
+            await loadCountries(); // Load countries data first
+
+            if (!state.settings.nickname || !state.settings.age || !state.settings.gender) {
+                showView('profile-modal');
+            } else {
+                ui.myNicknameDisplay.textContent = state.settings.nickname;
+                // Update UI with loaded settings
+                ui.nicknameInput.value = state.settings.nickname;
+                ui.ageInput.value = state.settings.age;
+                ui.genderSelect.value = state.settings.gender;
+                if (state.settings.gender === 'กำหนดเอง') {
+                    ui.customGenderNameInput.value = state.settings.customGenderName;
+                    ui.customGenderEmojiInput.value = state.settings.customGenderEmoji;
+                    ui.customGenderContainer.classList.remove('hidden');
+                }
+                showView('settings-view'); 
+            }
+        };
+
+        ui.genderSelect.addEventListener('change', () => {
+            ui.customGenderContainer.classList.toggle('hidden', ui.genderSelect.value !== 'กำหนดเอง');
+        });
+
+        ui.saveProfileBtn.addEventListener('click', () => {
+            const nickname = ui.nicknameInput.value.trim();
+            const age = ui.ageInput.value;
+            const gender = ui.genderSelect.value;
+            let customGenderName = ui.customGenderNameInput.value.trim();
+            let customGenderEmoji = ui.customGenderEmojiInput.value.trim();
+
+            if (!nickname) { showAlert('กรุณาใส่ชื่อเล่น'); return; }
+            if (!age || isNaN(age) || age < 13) { showAlert('กรุณาใส่อายุที่ถูกต้อง (13 ปีขึ้นไป)'); return; }
+
+            if (gender === 'กำหนดเอง') {
+                if (!customGenderName) { showAlert('กรุณาระบุชื่อเพศของคุณ'); return; }
+                if (!customGenderEmoji) { showAlert('กรุณาใส่อิโมจิประจำตัว'); return; }
+            }
+            
+            // Save to state and cookies
+            state.settings = { ...state.settings, nickname, age, gender, customGenderName, customGenderEmoji };
+            setCookie('userNickname', nickname);
+            setCookie('userAge', age);
+            setCookie('userGender', gender);
+            setCookie('userCustomGenderName', customGenderName);
+            setCookie('userCustomGenderEmoji', customGenderEmoji);
+
+            ui.myNicknameDisplay.textContent = nickname;
+            showView('country-setup-view');
+        });
+        
+        ui.saveCountriesBtn.addEventListener('click', () => {
+            setCookie('myCountry', state.settings.myCountry);
+            setCookie('partnerCountry', state.settings.partnerCountry);
+            updatePresence('online', state.peer?.id, null);
+            showView('settings-view');
+        });
+        
+        const toggleFullscreen = () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.error(err));
+            } else {
+                document.exitFullscreen();
+            }
+        };
+
+        const updateFullscreenIcon = () => {
+            const isFullscreen = !!document.fullscreenElement;
+            ui.fullscreenIcon.classList.toggle('bi-arrows-fullscreen', !isFullscreen);
+            ui.fullscreenIcon.classList.toggle('bi-fullscreen-exit', isFullscreen);
+        };
+
+        // Event listeners setup
+        ui.alertModalClose.addEventListener('click', () => ui.alertModal.style.display = 'none');
+        ui.startBtn.addEventListener('click', startSearch);
+        ui.nextBtn.addEventListener('click', () => hangUp(true));
+        ui.stopBtn.addEventListener('click', () => hangUp(false));
+        ui.cancelSearchBtn.addEventListener('click', () => hangUp(false));
+        ui.chatPanel.sendBtn.addEventListener('click', sendChatMessage);
+        ui.chatPanel.input.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+        ui.fullscreenBtn.addEventListener('click', toggleFullscreen);
+        document.addEventListener('fullscreenchange', updateFullscreenIcon);
+        ui.editProfileBtn.addEventListener('click', () => showView('profile-modal'));
+        ui.editCountriesBtn.addEventListener('click', () => showView('country-setup-view'));
+        window.addEventListener('beforeunload', () => {
+            clearInterval(state.heartbeatInterval);
+            if(state.peer && !state.peer.destroyed) {
+                state.peer.destroy();
+            }
+        });
+
+        window.onload = checkProfileAndInitialize;
+
     </script>
 </body>
 </html>
