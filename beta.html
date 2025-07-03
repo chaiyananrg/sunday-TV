@@ -13,162 +13,150 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Sarabun', sans-serif; }
-        .app-bg { background: linear-gradient(160deg, #020024 0%, #090979 35%, #002b32 100%); }
-        .glass-panel { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .nav-btn { transition: all 0.2s ease-in-out; }
-        .nav-btn.active, .nav-btn:hover { background-color: #0e7490; color: white; }
-        .dialpad-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s ease-in-out; }
-        .dialpad-btn:active { background: rgba(255, 255, 255, 0.2); transform: scale(0.95); }
-        .list-item:hover { background-color: rgba(255, 255, 255, 0.08); }
+        body { font-family: 'Sarabun', sans-serif; background-color: #0a0a0a; }
+        .app-container { background: #111; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        .view-panel { transition: opacity 0.3s ease, transform 0.3s ease; }
+        .view-panel.hidden { opacity: 0; transform: translateY(10px); pointer-events: none; position: absolute; }
+        .nav-btn { color: #888; transition: all 0.2s ease-in-out; }
+        .nav-btn.active, .nav-btn:hover { color: #2dd4bf; }
+        .dialpad-btn { background: rgba(255, 255, 255, 0.05); transition: all 0.2s ease-in-out; }
+        .dialpad-btn:active { background: rgba(255, 255, 255, 0.15); transform: scale(0.95); }
+        .list-item:hover { background-color: rgba(255, 255, 255, 0.05); }
         .btn-call { background: #10b981; box-shadow: 0 0 20px #10b981; }
         .btn-hangup { background: #ef4444; box-shadow: 0 0 20px #ef4444; }
         .btn-action { background: rgba(255, 255, 255, 0.1); }
         .btn-action:hover { background: rgba(255, 255, 255, 0.2); }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        .glass-modal { background: rgba(10, 10, 10, 0.5); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes pulse { 0%, 100% { box-shadow: 0 0 20px #10b981; } 50% { box-shadow: 0 0 35px #10b981; } }
         .pulse-call { animation: pulse 2s infinite; }
+        .tooltip { position: relative; display: inline-block; }
+        .tooltip .tooltiptext { visibility: hidden; width: 120px; background-color: #2dd4bf; color: #111; text-align: center; border-radius: 6px; padding: 5px 0; position: absolute; z-index: 1; bottom: 150%; left: 50%; margin-left: -60px; opacity: 0; transition: opacity 0.3s; }
+        .tooltip .tooltiptext::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #2dd4bf transparent transparent transparent; }
+        .tooltip.show .tooltiptext { visibility: visible; opacity: 1; }
     </style>
 </head>
-<body class="h-screen w-screen overflow-hidden dark app-bg text-gray-200 flex items-center justify-center p-4">
+<body class="h-screen w-screen overflow-hidden dark flex items-center justify-center p-0 md:p-4">
 
-    <div class="w-full max-w-5xl h-full max-h-[95vh] md:h-[90vh] grid grid-cols-12 gap-4">
-        <!-- Navigation Panel -->
-        <nav class="col-span-12 md:col-span-1 glass-panel rounded-2xl flex md:flex-col items-center justify-around md:justify-start md:py-8 md:space-y-8">
-            <button class="nav-btn p-3 rounded-full" data-view="dialpad-view"><i class="bi bi-grid-3x3-gap-fill text-2xl"></i></button>
-            <button class="nav-btn p-3 rounded-full" data-view="recents-view"><i class="bi bi-clock-history text-2xl"></i></button>
-            <button class="nav-btn p-3 rounded-full" data-view="contacts-view"><i class="bi bi-people-fill text-2xl"></i></button>
-            <button class="nav-btn p-3 rounded-full" data-view="settings-view"><i class="bi bi-gear-fill text-2xl"></i></button>
-        </nav>
+    <div class="app-container w-full h-full md:max-w-sm md:h-[90vh] md:rounded-3xl flex flex-col overflow-hidden">
+        <!-- Main Content Area -->
+        <main class="flex-grow p-6 flex flex-col relative">
+            <!-- Header -->
+            <header class="flex justify-between items-center mb-6">
+                <h1 id="view-title" class="text-3xl font-bold text-white">โทร</h1>
+                <div id="header-actions"></div>
+            </header>
 
-        <!-- Content Panel (Recents, Contacts, Settings) -->
-        <div class="col-span-12 md:col-span-4 glass-panel rounded-2xl p-6 flex flex-col">
-            <div id="recents-view" class="h-full flex-col hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold text-white">ประวัติการโทร</h2>
-                    <button id="clear-history-btn" class="text-sm text-cyan-400 hover:text-cyan-300">ล้างทั้งหมด</button>
-                </div>
-                <div id="history-list" class="flex-grow overflow-y-auto space-y-2 pr-2"></div>
-            </div>
-            <div id="contacts-view" class="hidden h-full flex-col">
-                <h2 class="text-2xl font-bold text-white mb-4">รายชื่อ</h2>
-                <div id="contacts-list" class="flex-grow overflow-y-auto space-y-2 pr-2"></div>
-            </div>
-            <div id="settings-view" class="hidden h-full flex flex-col space-y-6">
-                <h2 class="text-2xl font-bold text-white">ตั้งค่า</h2>
-                <div>
-                    <label for="display-name-input" class="block mb-2 text-gray-400">ชื่อที่แสดง</label>
-                    <input type="text" id="display-name-input" class="w-full p-3 bg-slate-800 rounded-lg border border-slate-600 focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="ใส่ชื่อของคุณ">
-                </div>
-                <button id="save-settings-btn" class="w-full py-3 bg-cyan-600 hover:bg-cyan-700 rounded-lg font-bold">บันทึก</button>
-                <div class="text-center pt-4 border-t border-slate-700">
-                    <h3 class="text-lg font-bold text-white">เบอร์โทรของคุณ</h3>
-                    <p class="text-sm text-gray-400">(สำหรับให้เพื่อนโทรหา)</p>
-                    <div class="mt-2 flex items-center justify-center gap-2 p-3 rounded-lg bg-slate-900/50">
-                        <span id="my-peer-id-display" class="text-cyan-400 font-mono text-lg truncate">...</span>
-                        <button id="copy-id-btn" class="p-2 rounded-md hover:bg-slate-600 transition"><i class="bi bi-clipboard text-white"></i></button>
+            <!-- Views Container -->
+            <div class="flex-grow relative">
+                <div id="dialpad-view" class="view-panel w-full h-full flex flex-col justify-between">
+                    <div class="w-full max-w-sm mx-auto">
+                        <input type="tel" id="dial-input" class="w-full text-5xl font-light text-center bg-transparent focus:outline-none py-2 mb-6" placeholder="กรอกเบอร์โทร">
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <!-- Dialpad buttons injected here -->
+                        </div>
+                    </div>
+                    <div class="flex justify-center items-center gap-4">
+                         <div class="w-16 h-16"></div> <!-- Spacer -->
+                        <button id="call-btn" class="w-20 h-20 rounded-full btn-call flex items-center justify-center text-4xl"><i class="bi bi-telephone-fill"></i></button>
+                        <button id="backspace-btn" class="w-16 h-16 rounded-full flex items-center justify-center text-2xl text-gray-400"><i class="bi bi-backspace"></i></button>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Main Action Panel (Dialpad) -->
-        <div id="dialpad-view" class="col-span-12 md:col-span-7 glass-panel rounded-2xl p-8 flex flex-col justify-between">
-            <div class="w-full max-w-sm mx-auto">
-                <div class="relative mb-4">
-                    <input type="tel" id="dial-input" class="w-full text-4xl font-light text-center bg-transparent border-b-2 border-slate-600 focus:border-cyan-500 focus:outline-none py-2" placeholder="กรอกเบอร์โทร">
-                    <button id="backspace-btn" class="absolute right-0 top-1/2 -translate-y-1/2 text-2xl text-gray-400 hover:text-white p-2"><i class="bi bi-backspace"></i></button>
+                <div id="contacts-view" class="view-panel hidden w-full h-full flex flex-col">
+                    <div id="contacts-list" class="flex-grow overflow-y-auto space-y-2 -mr-2 pr-2"></div>
                 </div>
-                <div class="grid grid-cols-3 gap-4 text-center">
-                    <!-- Dialpad buttons will be injected here -->
+
+                <div id="recents-view" class="view-panel hidden w-full h-full flex flex-col">
+                    <div id="history-list" class="flex-grow overflow-y-auto space-y-2 -mr-2 pr-2"></div>
                 </div>
             </div>
-            <div class="flex justify-center items-center gap-4">
-                <button id="add-contact-dialpad-btn" class="w-16 h-16 rounded-full btn-action flex items-center justify-center text-2xl"><i class="bi bi-person-plus-fill"></i></button>
-                <button id="call-btn" class="w-20 h-20 rounded-full btn-call flex items-center justify-center text-4xl"><i class="bi bi-telephone-fill"></i></button>
-                <div class="w-16 h-16"></div> <!-- Spacer -->
-            </div>
-        </div>
+        </main>
+
+        <!-- Navigation Bar -->
+        <nav class="w-full bg-black/30 border-t border-gray-800 flex items-center justify-around">
+            <button class="nav-btn p-4 flex flex-col items-center gap-1" data-view="recents-view"><i class="bi bi-clock-history text-2xl"></i><span class="text-xs">ล่าสุด</span></button>
+            <button class="nav-btn p-4 flex flex-col items-center gap-1" data-view="contacts-view"><i class="bi bi-people-fill text-2xl"></i><span class="text-xs">รายชื่อ</span></button>
+            <button class="nav-btn p-4 flex flex-col items-center gap-1 active" data-view="dialpad-view"><i class="bi bi-grid-3x3-gap-fill text-2xl"></i><span class="text-xs">ปุ่มกด</span></button>
+        </nav>
     </div>
     
     <!-- Modals -->
-    <div id="incoming-call-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 fade-in">
-        <div class="text-center">
-            <div id="incoming-avatar" class="w-32 h-32 rounded-full mx-auto mb-6 flex items-center justify-center text-5xl font-bold bg-purple-600"></div>
-            <h2 class="text-3xl font-bold text-white" id="caller-name-display">...</h2>
-            <p class="text-gray-400 mt-1">กำลังโทรหาคุณ...</p>
-            <div class="mt-12 flex justify-center gap-8">
+    <div id="incoming-call-modal" class="hidden fixed inset-0 glass-modal z-50 flex items-center justify-center p-4 fade-in">
+        <div class="text-center flex flex-col justify-between h-full py-16">
+            <div>
+                <h2 class="text-3xl font-bold text-white" id="caller-name-display">...</h2>
+                <p class="text-gray-400 mt-1">กำลังโทรหาคุณ...</p>
+            </div>
+            <div id="incoming-avatar" class="w-40 h-40 rounded-full mx-auto flex items-center justify-center text-6xl font-bold bg-purple-600"></div>
+            <div class="flex justify-center gap-8">
                 <button id="reject-call-btn" class="w-20 h-20 rounded-full btn-hangup flex flex-col items-center justify-center"><i class="bi bi-telephone-x-fill text-3xl"></i><span class="text-xs mt-1">ปฏิเสธ</span></button>
                 <button id="accept-call-btn" class="w-20 h-20 rounded-full btn-call pulse-call flex flex-col items-center justify-center"><i class="bi bi-telephone-inbound-fill text-3xl"></i><span class="text-xs mt-1">รับสาย</span></button>
             </div>
         </div>
     </div>
 
-    <div id="in-call-ui" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 fade-in">
-        <div class="text-center">
-            <div id="in-call-avatar" class="w-32 h-32 rounded-full mx-auto mb-6 flex items-center justify-center text-5xl font-bold bg-blue-600"></div>
-            <h2 class="text-3xl font-bold text-white" id="in-call-name-display">...</h2>
-            <p class="text-gray-400 mt-1 font-mono" id="call-timer">00:00</p>
-            <div class="mt-12 flex justify-center gap-8">
+    <div id="in-call-ui" class="hidden fixed inset-0 glass-modal z-50 flex items-center justify-center p-4 fade-in">
+         <div class="text-center flex flex-col justify-between h-full py-16">
+            <div>
+                <h2 class="text-3xl font-bold text-white" id="in-call-name-display">...</h2>
+                <p class="text-gray-400 mt-1 font-mono" id="call-timer">00:00</p>
+            </div>
+             <div id="in-call-avatar" class="w-40 h-40 rounded-full mx-auto flex items-center justify-center text-6xl font-bold bg-blue-600"></div>
+            <div class="flex justify-center gap-8">
                 <button id="mute-btn" class="w-20 h-20 rounded-full btn-action flex flex-col items-center justify-center"><i id="mute-icon" class="bi bi-mic-fill text-3xl"></i><span class="text-xs mt-1">ปิดเสียง</span></button>
                 <button id="hang-up-btn" class="w-20 h-20 rounded-full btn-hangup flex flex-col items-center justify-center"><i class="bi bi-telephone-fill text-3xl"></i><span class="text-xs mt-1">วางสาย</span></button>
             </div>
         </div>
     </div>
 
-    <div id="add-contact-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 fade-in">
-        <div class="glass-panel p-8 rounded-2xl w-full max-w-sm">
-            <h2 class="text-2xl font-bold text-white mb-4" id="add-contact-title">เพิ่มรายชื่อใหม่</h2>
-            <p class="text-gray-400 mb-2">เบอร์โทร: <span id="add-contact-id" class="font-mono text-cyan-400"></span></p>
+    <div id="settings-modal" class="hidden fixed inset-0 glass-modal z-50 flex items-center justify-center p-4 fade-in">
+        <div class="w-full max-w-sm bg-[#1a1a1a] rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-6">
+                 <h2 class="text-xl font-bold text-white">ตั้งค่า</h2>
+                 <button id="close-settings-btn" class="text-2xl text-gray-500 hover:text-white">&times;</button>
+            </div>
             <div>
-                <label for="add-contact-name" class="text-gray-300 mb-1 block">ชื่อเล่น</label>
-                <input type="text" id="add-contact-name" class="w-full p-3 bg-slate-800 rounded-lg border border-slate-600 focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="ชื่อที่ต้องการบันทึก">
+                <label for="display-name-input" class="block mb-2 text-gray-400">ชื่อที่แสดงของคุณ</label>
+                <input type="text" id="display-name-input" class="w-full p-3 bg-slate-800 rounded-lg border border-slate-600 focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="ใส่ชื่อของคุณ">
             </div>
-            <div class="mt-6 flex gap-4">
-                <button id="save-contact-btn" class="flex-1 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 font-bold">บันทึก</button>
-                <button id="cancel-add-contact-btn" class="flex-1 py-2 rounded-lg bg-slate-600 hover:bg-slate-700 font-bold">ยกเลิก</button>
+            <div class="text-center pt-6 mt-6 border-t border-slate-700">
+                <h3 class="text-lg font-bold text-white">เบอร์โทรของคุณ</h3>
+                <div class="mt-2 flex items-center justify-center gap-2 p-3 rounded-lg bg-slate-900/50 tooltip" id="copy-id-container">
+                    <span id="my-peer-id-display" class="text-teal-400 font-mono text-lg truncate">...</span>
+                    <i class="bi bi-clipboard text-white"></i>
+                    <span class="tooltiptext">คัดลอก</span>
+                </div>
             </div>
+            <button id="save-settings-btn" class="w-full mt-6 py-3 bg-teal-600 hover:bg-teal-700 rounded-lg font-bold">บันทึกและปิด</button>
         </div>
     </div>
-
+    
     <audio id="remote-audio" autoplay></audio>
 
     <script type="module">
-        // --- STATE MANAGEMENT ---
-        const state = {
-            peer: null,
-            myId: null,
-            displayName: 'ผู้ใช้ใหม่',
-            localStream: null,
-            dataConnection: null,
-            mediaConnection: null,
-            contacts: [],
-            history: [],
-            callTimerInterval: null,
-            isMuted: false,
-            currentCallDirection: null,
-            activeView: 'dialpad-view',
-        };
-
-        // --- UI ELEMENTS ---
+        const state = { peer: null, myId: null, displayName: 'ผู้ใช้ใหม่', localStream: null, dataConnection: null, mediaConnection: null, contacts: [], history: [], callTimerInterval: null, isMuted: false, currentCallDirection: null, activeView: 'dialpad-view' };
         const ui = {
             navButtons: document.querySelectorAll('.nav-btn'),
-            dialpadView: document.getElementById('dialpad-view'),
-            recentsView: document.getElementById('recents-view'),
-            contactsView: document.getElementById('contacts-view'),
-            settingsView: document.getElementById('settings-view'),
+            viewTitle: document.getElementById('view-title'),
+            headerActions: document.getElementById('header-actions'),
+            views: {
+                dialpad: document.getElementById('dialpad-view'),
+                contacts: document.getElementById('contacts-view'),
+                recents: document.getElementById('recents-view'),
+            },
             dialInput: document.getElementById('dial-input'),
             backspaceBtn: document.getElementById('backspace-btn'),
             callBtn: document.getElementById('call-btn'),
-            addContactDialpadBtn: document.getElementById('add-contact-dialpad-btn'),
             historyList: document.getElementById('history-list'),
             contactsList: document.getElementById('contacts-list'),
-            clearHistoryBtn: document.getElementById('clear-history-btn'),
+            settingsModal: document.getElementById('settings-modal'),
             displayNameInput: document.getElementById('display-name-input'),
             saveSettingsBtn: document.getElementById('save-settings-btn'),
+            closeSettingsBtn: document.getElementById('close-settings-btn'),
             myPeerIdDisplay: document.getElementById('my-peer-id-display'),
-            copyIdBtn: document.getElementById('copy-id-btn'),
+            copyIdContainer: document.getElementById('copy-id-container'),
             incomingCallModal: document.getElementById('incoming-call-modal'),
             callerNameDisplay: document.getElementById('caller-name-display'),
             incomingAvatar: document.getElementById('incoming-avatar'),
@@ -181,32 +169,21 @@
             muteBtn: document.getElementById('mute-btn'),
             muteIcon: document.getElementById('mute-icon'),
             hangUpBtn: document.getElementById('hang-up-btn'),
-            addContactModal: document.getElementById('add-contact-modal'),
-            addContactTitle: document.getElementById('add-contact-title'),
-            addContactId: document.getElementById('add-contact-id'),
-            addContactName: document.getElementById('add-contact-name'),
-            saveContactBtn: document.getElementById('save-contact-btn'),
-            cancelAddContactBtn: document.getElementById('cancel-add-contact-btn'),
             remoteAudio: document.getElementById('remote-audio'),
         };
-
-        // --- SOUND & PERMISSIONS ---
-        let sounds = {};
-        let isAudioInitialized = false;
+        let sounds = {}, isAudioInitialized = false;
 
         async function initializeAudio() {
-            if (isAudioInitialized || typeof Tone === 'undefined') return true;
+            if (isAudioInitialized) return true;
             try {
                 await Tone.start();
                 sounds = {
                     ringtone: new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 0.1 } }).toDestination(),
-                    dialTone: new Tone.Synth({ oscillator: { type: 'pulse', width: 0.8 }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 } }).toDestination(),
                     endCallTone: new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.5, sustain: 0, release: 0.1 } }).toDestination(),
                     btnPress: new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination(),
                     ringtoneLoop: null
                 };
-                isAudioInitialized = true;
-                return true;
+                isAudioInitialized = true; return true;
             } catch (e) { console.error("Could not start AudioContext:", e); return false; }
         }
 
@@ -215,218 +192,141 @@
             try {
                 state.localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
                 return true;
-            } catch (err) {
-                alert('ไม่สามารถเข้าถึงไมโครโฟนได้ กรุณาตรวจสอบการอนุญาตในเบราว์เซอร์ของคุณ');
-                return false;
-            }
+            } catch (err) { alert('ไม่สามารถเข้าถึงไมโครโฟนได้'); return false; }
         }
         
-        function playRingtone() {
+        const playRingtone = () => {
             if (!isAudioInitialized) return;
-            sounds.ringtoneLoop = new Tone.Loop(time => {
-                sounds.ringtone.triggerAttackRelease('G5', '8n', time);
-                sounds.ringtone.triggerAttackRelease('E5', '8n', time + 0.2);
-            }, '0.5s').start(0);
+            sounds.ringtoneLoop = new Tone.Loop(time => { sounds.ringtone.triggerAttackRelease('G5', '8n', time); sounds.ringtone.triggerAttackRelease('E5', '8n', time + 0.2); }, '0.5s').start(0);
             Tone.Transport.start();
-        }
-
-        function stopRingtone() {
-            if (sounds.ringtoneLoop) {
-                sounds.ringtoneLoop.stop(0).dispose();
-                sounds.ringtoneLoop = null;
-                if (Tone.Transport.state === 'started') Tone.Transport.stop();
-            }
-        }
-
-        // --- UTILITY & PERSISTENCE (LocalStorage) ---
-        const formatPhoneNumber = (id) => {
-            if (!id || id.length !== 10) return id;
-            return `${id.substring(0, 3)}-${id.substring(3, 6)}-${id.substring(6, 10)}`;
-        }
-
-        const generateAvatar = (name) => {
-            const initial = name ? name.charAt(0).toUpperCase() : '?';
-            const colors = ['bg-purple-600', 'bg-blue-600', 'bg-green-600', 'bg-pink-600', 'bg-indigo-600', 'bg-teal-600'];
-            const color = colors[initial.charCodeAt(0) % colors.length];
-            return `<div class="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${color}">${initial}</div>`;
+        };
+        const stopRingtone = () => {
+            if (sounds.ringtoneLoop) { sounds.ringtoneLoop.stop(0).dispose(); sounds.ringtoneLoop = null; if (Tone.Transport.state === 'started') Tone.Transport.stop(); }
         };
 
-        const findContact = (id) => state.contacts.find(c => c.id === id);
-        const findContactName = (id) => findContact(id)?.name || formatPhoneNumber(id);
-
+        const formatPhoneNumber = (id) => id && id.length === 10 ? `${id.substring(0, 3)}-${id.substring(3, 6)}-${id.substring(6, 10)}` : id;
+        const generateAvatar = (name, size = 'w-12 h-12', textSize = 'text-xl') => `<div class="${size} rounded-full flex items-center justify-center font-bold ${['bg-purple-600', 'bg-blue-600', 'bg-green-600', 'bg-pink-600', 'bg-indigo-600', 'bg-teal-600'][(name||'?').charCodeAt(0)%6]}">${(name||'?').charAt(0).toUpperCase()}</div>`;
+        const findContact = id => state.contacts.find(c => c.id === id);
+        const findContactName = id => findContact(id)?.name || formatPhoneNumber(id);
         const loadData = () => {
             state.displayName = localStorage.getItem('sunday_call_displayName') || 'ผู้ใช้ใหม่';
             state.contacts = JSON.parse(localStorage.getItem('sunday_call_contacts')) || [];
             state.history = JSON.parse(localStorage.getItem('sunday_call_history')) || [];
             ui.displayNameInput.value = state.displayName;
-            renderContacts();
-            renderHistory();
+            renderAll();
         };
-
         const saveData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
-        // --- UI RENDERING ---
         function switchView(viewId) {
-            const mainViews = ['recents-view', 'contacts-view', 'settings-view'];
-            const isMainView = mainViews.includes(viewId);
-
-            if (isMainView) {
-                mainViews.forEach(id => document.getElementById(id).classList.toggle('hidden', id !== viewId));
-                ui.dialpadView.classList.add('hidden');
-            } else { // Dialpad view
-                mainViews.forEach(id => document.getElementById(id).classList.add('hidden'));
-                ui.dialpadView.classList.remove('hidden');
-            }
-            
+            Object.values(ui.views).forEach(v => v.classList.add('hidden'));
+            ui.views[viewId.replace('-view', '')].classList.remove('hidden');
             ui.navButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.view === viewId));
-            state.activeView = viewId;
+            const titles = { 'dialpad-view': 'โทร', 'contacts-view': 'รายชื่อ', 'recents-view': 'ล่าสุด' };
+            ui.viewTitle.textContent = titles[viewId];
+            updateHeaderActions(viewId);
         }
 
-        function renderContacts() {
-            const list = ui.contactsList;
-            list.innerHTML = '';
-            if (state.contacts.length === 0) {
-                list.innerHTML = `<p class="text-gray-400 text-center mt-4">ไม่มีรายชื่อ</p>`;
-                return;
+        function updateHeaderActions(viewId) {
+            ui.headerActions.innerHTML = '';
+            if (viewId === 'contacts-view') {
+                ui.headerActions.innerHTML = `<button id="add-contact-btn" class="text-2xl text-teal-400 hover:text-teal-300"><i class="bi bi-plus-circle-fill"></i></button>`;
+                document.getElementById('add-contact-btn').onclick = () => showAddContactModal();
+            } else if (viewId === 'recents-view') {
+                ui.headerActions.innerHTML = `<button id="clear-history-btn" class="text-sm text-teal-400 hover:text-teal-300">ล้าง</button>`;
+                document.getElementById('clear-history-btn').onclick = () => { if (confirm('คุณต้องการล้างประวัติการโทรทั้งหมดใช่หรือไม่?')) { state.history = []; saveData('sunday_call_history', []); renderHistory(); } };
+            } else {
+                 ui.headerActions.innerHTML = `<button id="open-settings-btn" class="text-2xl text-gray-400 hover:text-white"><i class="bi bi-gear-fill"></i></button>`;
+                 document.getElementById('open-settings-btn').onclick = () => ui.settingsModal.classList.remove('hidden');
             }
-            state.contacts.forEach(c => {
-                list.innerHTML += `
-                    <div class="list-item p-3 rounded-lg flex items-center justify-between cursor-pointer" data-id="${c.id}">
-                        <div class="flex items-center gap-4">
-                            ${generateAvatar(c.name)}
-                            <div>
-                                <p class="font-bold text-white">${c.name}</p>
-                                <p class="text-xs text-gray-400 font-mono">${formatPhoneNumber(c.id)}</p>
-                            </div>
+        }
+        
+        const renderAll = () => { renderContacts(); renderHistory(); };
+
+        function renderContacts() {
+            ui.contactsList.innerHTML = !state.contacts.length ? `<p class="text-gray-500 text-center mt-8">ไม่มีรายชื่อ</p>` : state.contacts.map(c => `
+                <div class="list-item p-2 rounded-lg flex items-center justify-between" data-id="${c.id}">
+                    <div class="flex items-center gap-4 cursor-pointer" onclick="window.makeCall('${c.id}')">
+                        ${generateAvatar(c.name)}
+                        <div>
+                            <p class="font-bold text-white">${c.name}</p>
+                            <p class="text-xs text-gray-400 font-mono">${formatPhoneNumber(c.id)}</p>
                         </div>
-                        <button class="edit-contact-btn p-2 text-gray-400 hover:text-white" data-id="${c.id}" data-name="${c.name}"><i class="bi bi-pencil-fill"></i></button>
-                    </div>`;
-            });
+                    </div>
+                    <button class="edit-contact-btn p-3 text-gray-400 hover:text-white" data-id="${c.id}" data-name="${c.name}"><i class="bi bi-pencil-fill"></i></button>
+                </div>`).join('');
         }
 
         function renderHistory() {
-            const list = ui.historyList;
-            list.innerHTML = '';
-            if (state.history.length === 0) {
-                list.innerHTML = `<p class="text-gray-400 text-center mt-4">ไม่มีประวัติ</p>`;
-                return;
-            }
-            state.history.forEach(entry => {
+            ui.historyList.innerHTML = !state.history.length ? `<p class="text-gray-500 text-center mt-8">ไม่มีประวัติการโทร</p>` : state.history.map(entry => {
                 const name = findContactName(entry.id);
-                const iconMap = {
-                    outgoing: { i: 'bi-arrow-up-right', c: 'text-blue-400' },
-                    incoming: { i: 'bi-arrow-down-left', c: 'text-green-400' },
-                    missed: { i: 'bi-arrow-down-left', c: 'text-red-400' }
-                };
-                list.innerHTML += `
-                    <div class="list-item p-3 rounded-lg flex items-center justify-between cursor-pointer" data-id="${entry.id}">
-                        <div class="flex items-center gap-4">
-                            ${generateAvatar(name)}
-                            <div>
-                                <p class="font-bold text-white">${name}</p>
-                                <p class="text-xs text-gray-400 flex items-center gap-1">
-                                    <i class="bi ${iconMap[entry.type].i} ${iconMap[entry.type].c}"></i>
-                                    ${new Date(entry.timestamp).toLocaleString('th-TH', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                            </div>
+                const iconMap = { outgoing: { i: 'bi-arrow-up-right', c: 'text-blue-400' }, incoming: { i: 'bi-arrow-down-left', c: 'text-green-400' }, missed: { i: 'bi-arrow-down-left', c: 'text-red-400' } };
+                return `
+                <div class="list-item p-2 rounded-lg flex items-center justify-between cursor-pointer" onclick="window.makeCall('${entry.id}')">
+                    <div class="flex items-center gap-4">
+                        ${generateAvatar(name)}
+                        <div>
+                            <p class="font-bold text-white ${entry.type === 'missed' ? 'text-red-400' : ''}">${name}</p>
+                            <p class="text-xs text-gray-400 flex items-center gap-1"><i class="bi ${iconMap[entry.type].i} ${iconMap[entry.type].c}"></i> ${new Date(entry.timestamp).toLocaleString('th-TH', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
-                    </div>`;
-            });
+                    </div>
+                    <button class="info-contact-btn p-3 text-teal-400 hover:text-teal-300" data-id="${entry.id}"><i class="bi bi-info-circle-fill"></i></button>
+                </div>`
+            }).join('');
         }
         
-        function addCallToHistory(type, id, name) {
-            state.history.unshift({ type, id, timestamp: Date.now() });
-            if (state.history.length > 50) state.history.pop();
-            saveData('sunday_call_history', state.history);
-            renderHistory();
-        }
+        const addCallToHistory = (type, id, name) => { state.history.unshift({ type, id, timestamp: Date.now() }); if (state.history.length > 50) state.history.pop(); saveData('sunday_call_history', state.history); renderHistory(); };
 
-        // --- CORE CALLING LOGIC ---
         async function initializePeerConnection() {
             let storedId = localStorage.getItem('sunday_call_peer_id');
-            if (storedId) {
-                connectToPeerServer(storedId);
-            } else {
-                ui.myPeerIdDisplay.textContent = "กำลังค้นหาเบอร์...";
-                const newId = await findAndRegisterUniqueId();
-                if (newId) {
-                    localStorage.setItem('sunday_call_peer_id', newId);
-                    connectToPeerServer(newId);
-                } else {
-                    alert("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง");
-                    ui.myPeerIdDisplay.textContent = "การเชื่อมต่อล้มเหลว";
-                }
-            }
+            if (storedId) return connectToPeerServer(storedId);
+            ui.myPeerIdDisplay.textContent = "กำลังหาเบอร์...";
+            const newId = await findAndRegisterUniqueId();
+            if (newId) { localStorage.setItem('sunday_call_peer_id', newId); connectToPeerServer(newId); } 
+            else { alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้"); ui.myPeerIdDisplay.textContent = "ล้มเหลว"; }
         }
 
         async function findAndRegisterUniqueId() {
-            let attempts = 0;
-            const maxAttempts = 20;
-            while (attempts < maxAttempts) {
-                const randomId = Math.floor(Math.random() * 1_000_000_0000).toString().padStart(10, '0');
+            for (let i = 0; i < 20; i++) {
+                const randomId = '0' + Math.floor(Math.random() * 1_000_000_000).toString().padStart(9, '0');
                 try {
                     await new Promise((resolve, reject) => {
                         const tempPeer = new Peer(randomId);
                         tempPeer.on('open', id => { tempPeer.destroy(); resolve(id); });
                         tempPeer.on('error', err => { tempPeer.destroy(); reject(err); });
                     });
-                    return randomId; // ID is available
-                } catch (err) {
-                    if (err.type === 'unavailable-id') {
-                        console.warn(`ID ${randomId} is taken. Retrying...`);
-                        attempts++;
-                    } else {
-                        console.error("Critical PeerJS error:", err);
-                        return null; // A more serious error occurred
-                    }
-                }
-            }
-            return null; // Failed after max attempts
+                    return randomId;
+                } catch (err) { if (err.type !== 'unavailable-id') return null; }
+            } return null;
         }
 
         function connectToPeerServer(id) {
             if (state.peer) state.peer.destroy();
             state.peer = new Peer(id);
-            state.peer.on('open', newId => {
-                console.log('PeerJS connection open. My ID is:', newId);
-                state.myId = newId;
-                ui.myPeerIdDisplay.textContent = formatPhoneNumber(newId);
-            });
-            setupPeerEvents();
-        }
-
-        function setupPeerEvents() {
+            state.peer.on('open', newId => { state.myId = newId; ui.myPeerIdDisplay.textContent = formatPhoneNumber(newId); });
             state.peer.on('connection', conn => {
                 state.dataConnection = conn;
                 conn.on('data', data => {
                     if (data.type === 'call_init') {
                         ui.callerNameDisplay.textContent = data.payload.name;
-                        ui.incomingAvatar.innerHTML = generateAvatar(data.payload.name);
+                        ui.incomingAvatar.innerHTML = generateAvatar(data.payload.name, 'w-40 h-40', 'text-6xl');
                         ui.incomingCallModal.classList.remove('hidden');
                         initializeAudio().then(playRingtone);
-                    } else {
-                        handleData(data, conn.peer);
-                    }
+                    } else handleData(data, conn.peer);
                 });
             });
             state.peer.on('call', call => { state.mediaConnection = call; });
             state.peer.on('error', err => console.error('PeerJS Error:', err));
         }
         
-        async function makeCall(recipientId) {
+        window.makeCall = async (recipientId) => {
             const cleanId = recipientId.replace(/-/g, '');
-            if (!cleanId || cleanId.length !== 10 || !/^\d+$/.test(cleanId) || cleanId === state.myId) {
-                alert('กรุณากรอกเบอร์โทร 10 หลักให้ถูกต้อง');
-                return;
-            }
-            
+            if (!cleanId || cleanId.length !== 10 || !/^\d+$/.test(cleanId) || cleanId === state.myId) return alert('กรุณากรอกเบอร์โทร 10 หลักให้ถูกต้อง');
             const audioReady = await initializeAudio();
             const micReady = await requestMicrophone();
             if (!audioReady || !micReady) return;
             
-            if(isAudioInitialized) sounds.dialTone.triggerAttackRelease('C5', '0.2');
+            if(isAudioInitialized) sounds.btnPress.triggerAttackRelease('C5', '8n');
             state.currentCallDirection = 'outgoing';
-            
             const dataConn = state.peer.connect(cleanId);
             state.dataConnection = dataConn;
             dataConn.on('open', () => {
@@ -437,36 +337,21 @@
                 showInCallUI(cleanId);
                 dataConn.on('data', data => handleData(data, cleanId));
             });
-        }
+        };
 
-        function handleData(data, peerId) {
-            switch (data.type) {
-                case 'call_rejected':
-                    cleanUpCall();
-                    addCallToHistory('outgoing', peerId, findContactName(peerId));
-                    break;
-                case 'hang_up':
-                    cleanUpCall();
-                    addCallToHistory(state.currentCallDirection, peerId, findContactName(peerId));
-                    break;
-            }
-        }
+        const handleData = (data, peerId) => {
+            if (data.type === 'call_rejected') { cleanUpCall(); addCallToHistory('outgoing', peerId); }
+            else if (data.type === 'hang_up') { cleanUpCall(); addCallToHistory(state.currentCallDirection, peerId); }
+        };
         
         function showInCallUI(peerId) {
             const name = findContactName(peerId);
             ui.incomingCallModal.classList.add('hidden');
             ui.inCallUi.classList.remove('hidden');
             ui.inCallNameDisplay.textContent = name;
-            ui.inCallAvatar.innerHTML = generateAvatar(name);
-            
-            let seconds = 0;
-            ui.callTimer.textContent = '00:00';
-            state.callTimerInterval = setInterval(() => {
-                seconds++;
-                const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-                const secs = (seconds % 60).toString().padStart(2, '0');
-                ui.callTimer.textContent = `${mins}:${secs}`;
-            }, 1000);
+            ui.inCallAvatar.innerHTML = generateAvatar(name, 'w-40 h-40', 'text-6xl');
+            let seconds = 0; ui.callTimer.textContent = '00:00';
+            state.callTimerInterval = setInterval(() => { seconds++; const mins = Math.floor(seconds / 60).toString().padStart(2, '0'); const secs = (seconds % 60).toString().padStart(2, '0'); ui.callTimer.textContent = `${mins}:${secs}`; }, 1000);
         }
 
         function cleanUpCall() {
@@ -475,9 +360,7 @@
             if (state.mediaConnection) state.mediaConnection.close();
             if (state.localStream) { state.localStream.getTracks().forEach(track => track.stop()); state.localStream = null; }
             if (state.callTimerInterval) clearInterval(state.callTimerInterval);
-            
             Object.assign(state, { dataConnection: null, mediaConnection: null, isMuted: false, currentCallDirection: null });
-            
             ui.muteIcon.classList.replace('bi-mic-mute-fill', 'bi-mic-fill');
             ui.incomingCallModal.classList.add('hidden');
             ui.inCallUi.classList.add('hidden');
@@ -485,52 +368,48 @@
 
         // --- EVENT HANDLERS ---
         ui.navButtons.forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
-
-        ui.callBtn.addEventListener('click', () => makeCall(ui.dialInput.value.trim()));
-        ui.dialInput.addEventListener('keyup', e => { if (e.key === 'Enter') makeCall(ui.dialInput.value.trim()); });
-
+        ui.callBtn.addEventListener('click', () => window.makeCall(ui.dialInput.value.trim()));
+        ui.dialInput.addEventListener('keyup', e => { if (e.key === 'Enter') window.makeCall(ui.dialInput.value.trim()); });
         ui.acceptCallBtn.addEventListener('click', async () => {
             stopRingtone();
             const micReady = await requestMicrophone();
             if (!micReady) { cleanUpCall(); return; }
-
             state.currentCallDirection = 'incoming';
             state.mediaConnection.answer(state.localStream);
             state.mediaConnection.on('stream', remoteStream => { ui.remoteAudio.srcObject = remoteStream; });
-            addCallToHistory('incoming', state.dataConnection.peer, ui.callerNameDisplay.textContent);
+            addCallToHistory('incoming', state.dataConnection.peer);
             showInCallUI(state.dataConnection.peer);
         });
+        ui.rejectCallBtn.addEventListener('click', () => { stopRingtone(); state.dataConnection.send({ type: 'call_rejected' }); addCallToHistory('missed', state.dataConnection.peer); cleanUpCall(); });
+        ui.hangUpBtn.addEventListener('click', () => { if(isAudioInitialized) sounds.endCallTone.triggerAttackRelease('A4', '0.5'); if (state.dataConnection) state.dataConnection.send({ type: 'hang_up' }); setTimeout(cleanUpCall, 100); });
         
-        ui.rejectCallBtn.addEventListener('click', () => {
-            stopRingtone();
-            state.dataConnection.send({ type: 'call_rejected' });
-            addCallToHistory('missed', state.dataConnection.peer, ui.callerNameDisplay.textContent);
-            cleanUpCall();
-        });
-
-        ui.hangUpBtn.addEventListener('click', () => {
-            if(isAudioInitialized) sounds.endCallTone.triggerAttackRelease('A4', '0.5');
-            if (state.dataConnection) state.dataConnection.send({ type: 'hang_up' });
-            setTimeout(cleanUpCall, 100);
-        });
-        
-        // --- INITIALIZATION ---
         window.onload = () => {
             loadData();
             initializePeerConnection();
             switchView('dialpad-view');
-            
             const dialpadContainer = document.querySelector('#dialpad-view .grid');
-            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].forEach(char => {
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', ''].forEach((char, i) => {
                 const btn = document.createElement('button');
-                btn.className = 'dialpad-btn p-4 rounded-full text-2xl font-light';
+                btn.className = 'dialpad-btn p-4 rounded-full text-3xl font-light h-20 w-20 mx-auto';
+                if (char === '') { btn.disabled = true; return; }
                 btn.textContent = char;
-                btn.onclick = () => {
-                    ui.dialInput.value += char;
-                    initializeAudio().then(() => isAudioInitialized && sounds.btnPress.triggerAttackRelease('C5', '8n'));
-                };
+                btn.onclick = () => { ui.dialInput.value += char; initializeAudio().then(() => isAudioInitialized && sounds.btnPress.triggerAttackRelease('C5', '8n')); };
                 dialpadContainer.appendChild(btn);
             });
+            ui.copyIdContainer.onclick = () => {
+                if (!state.myId) return;
+                navigator.clipboard.writeText(state.myId);
+                const tooltip = ui.copyIdContainer.querySelector('.tooltiptext');
+                tooltip.textContent = 'คัดลอกแล้ว!';
+                ui.copyIdContainer.classList.add('show');
+                setTimeout(() => { ui.copyIdContainer.classList.remove('show'); tooltip.textContent = 'คัดลอก'; }, 2000);
+            };
+            ui.closeSettingsBtn.onclick = () => ui.settingsModal.classList.add('hidden');
+            ui.saveSettingsBtn.onclick = () => {
+                state.displayName = ui.displayNameInput.value.trim() || 'ผู้ใช้ใหม่';
+                saveData('sunday_call_displayName', state.displayName);
+                ui.settingsModal.classList.add('hidden');
+            };
         };
     </script>
 </body>
