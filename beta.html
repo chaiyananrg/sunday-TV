@@ -153,7 +153,7 @@
             history: [],
             callTimerInterval: null,
             isMuted: false,
-            currentCallDirection: null, // FIX: Track call direction
+            currentCallDirection: null,
         };
 
         // --- UI ELEMENTS ---
@@ -188,46 +188,49 @@
             remoteAudio: document.getElementById('remote-audio'),
         };
 
-        // --- SOUND SYNTHESIS (Tone.js) ---
-        // FIX: Delay sound initialization until after a user gesture.
+        // --- SOUND & PERMISSIONS ---
         let sounds = {};
         let isAudioInitialized = false;
 
         async function initializeAudio() {
             if (isAudioInitialized || typeof Tone === 'undefined') {
-                return;
+                return true;
             }
             try {
                 await Tone.start();
                 console.log("AudioContext started successfully.");
                 
                 sounds = {
-                    ringtone: new Tone.Synth({
-                        oscillator: { type: 'sine' },
-                        envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 0.1 }
-                    }).toDestination(),
-                    dialTone: new Tone.Synth({
-                        oscillator: { type: 'pulse', width: 0.8 },
-                        envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 }
-                    }).toDestination(),
-                    endCallTone: new Tone.Synth({
-                        oscillator: { type: 'triangle' },
-                        envelope: { attack: 0.01, decay: 0.5, sustain: 0, release: 0.1 }
-                    }).toDestination(),
+                    ringtone: new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 0.1 } }).toDestination(),
+                    dialTone: new Tone.Synth({ oscillator: { type: 'pulse', width: 0.8 }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 } }).toDestination(),
+                    endCallTone: new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.5, sustain: 0, release: 0.1 } }).toDestination(),
                     ringtoneLoop: null
                 };
                 isAudioInitialized = true;
+                return true;
             } catch (e) {
                 console.error("Could not start AudioContext:", e);
-                alert("ไม่สามารถเริ่มระบบเสียงได้ กรุณาคลิกที่หน้าจออีกครั้ง");
+                alert("ไม่สามารถเริ่มระบบเสียงได้ กรุณาคลิกที่หน้าจอแล้วลองอีกครั้ง");
+                return false;
+            }
+        }
+
+        async function requestMicrophone() {
+            if (state.localStream) {
+                return true; // Already have stream
+            }
+            try {
+                state.localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                return true;
+            } catch (err) {
+                console.error('Failed to get local stream', err);
+                alert('ไม่สามารถเข้าถึงไมโครโฟนได้ กรุณาตรวจสอบการอนุญาตในเบราว์เซอร์ของคุณ');
+                return false;
             }
         }
         
         function playRingtone() {
-            if (!isAudioInitialized) {
-                console.warn("Cannot play ringtone, audio context not started.");
-                return;
-            }
+            if (!isAudioInitialized) return;
             sounds.ringtoneLoop = new Tone.Loop(time => {
                 sounds.ringtone.triggerAttackRelease('G5', '8n', time);
                 sounds.ringtone.triggerAttackRelease('E5', '8n', time + 0.2);
@@ -351,21 +354,13 @@
                 state.dataConnection = conn;
                 ui.callerIdDisplay.textContent = findContactName(conn.peer);
                 ui.incomingCallModal.classList.remove('hidden');
-                playRingtone();
+                initializeAudio().then(playRingtone);
             });
 
             state.peer.on('call', (call) => {
                 console.log('Incoming media call from', call.peer);
                 state.mediaConnection = call;
-                navigator.mediaDevices.getUserMedia({ video: false, audio: true })
-                    .then(stream => {
-                        state.localStream = stream;
-                        call.answer(stream);
-                        call.on('stream', remoteStream => {
-                            ui.remoteAudio.srcObject = remoteStream;
-                        });
-                        showInCallUI(call.peer);
-                    }).catch(err => console.error('Failed to get local stream', err));
+                // Don't answer here. Wait for user to click "accept".
             });
             
             state.peer.on('error', err => {
@@ -377,53 +372,47 @@
         }
         
         async function makeCall(recipientId) {
-            await initializeAudio();
-            if (!isAudioInitialized) {
-                alert("ระบบเสียงยังไม่พร้อม กรุณาคลิกที่หน้าจอแล้วลองอีกครั้ง");
-                return;
-            }
             if (!recipientId || recipientId === state.myId) {
                 alert('กรุณาใส่ ID ที่ถูกต้อง');
                 return;
             }
             
-            sounds.dialTone.triggerAttackRelease('C5', '0.2');
-            state.currentCallDirection = 'outgoing'; // FIX: Set call direction
+            const audioReady = await initializeAudio();
+            const micReady = await requestMicrophone();
+            if (!audioReady || !micReady) return;
+            
+            if(isAudioInitialized) sounds.dialTone.triggerAttackRelease('C5', '0.2');
+            state.currentCallDirection = 'outgoing';
             ui.callingIdDisplay.textContent = findContactName(recipientId);
             ui.callingModal.classList.remove('hidden');
 
-            const conn = state.peer.connect(recipientId);
-            state.dataConnection = conn;
-            
-            conn.on('open', () => {
+            // Establish data connection first
+            const dataConn = state.peer.connect(recipientId);
+            state.dataConnection = dataConn;
+            dataConn.on('open', () => {
                 console.log('Data connection established with', recipientId);
-                conn.on('data', (data) => handleData(data, recipientId));
+                dataConn.on('data', (data) => handleData(data, recipientId));
+                
+                // Now make the media call
+                const mediaConn = state.peer.call(recipientId, state.localStream);
+                state.mediaConnection = mediaConn;
+                mediaConn.on('stream', remoteStream => {
+                    ui.remoteAudio.srcObject = remoteStream;
+                });
+                showInCallUI(recipientId);
             });
         }
 
         function handleData(data, peerId) {
             console.log('Received data:', data);
             switch (data.type) {
-                case 'call_accepted':
-                    ui.callingModal.classList.add('hidden');
-                    navigator.mediaDevices.getUserMedia({ video: false, audio: true })
-                        .then(stream => {
-                            state.localStream = stream;
-                            const call = state.peer.call(peerId, stream);
-                            state.mediaConnection = call;
-                            call.on('stream', remoteStream => {
-                                ui.remoteAudio.srcObject = remoteStream;
-                            });
-                            showInCallUI(peerId);
-                        }).catch(err => console.error('Failed to get local stream', err));
-                    break;
                 case 'call_rejected':
                     alert(`${findContactName(peerId)} ปฏิเสธสาย`);
                     addCallToHistory('outgoing', peerId);
                     cleanUpCall();
                     break;
                 case 'hang_up':
-                    addCallToHistory(state.currentCallDirection === 'outgoing' ? 'outgoing' : 'incoming', peerId);
+                    addCallToHistory(state.currentCallDirection, peerId);
                     cleanUpCall();
                     break;
             }
@@ -449,14 +438,16 @@
             stopRingtone();
             if (state.dataConnection) state.dataConnection.close();
             if (state.mediaConnection) state.mediaConnection.close();
-            if (state.localStream) state.localStream.getTracks().forEach(track => track.stop());
+            if (state.localStream) {
+                state.localStream.getTracks().forEach(track => track.stop());
+                state.localStream = null;
+            }
             if (state.callTimerInterval) clearInterval(state.callTimerInterval);
             
             state.dataConnection = null;
             state.mediaConnection = null;
-            state.localStream = null;
             state.isMuted = false;
-            state.currentCallDirection = null; // FIX: Reset call direction
+            state.currentCallDirection = null;
             
             ui.muteIcon.classList.remove('bi-mic-mute-fill');
             ui.muteIcon.classList.add('bi-mic-fill');
@@ -477,12 +468,23 @@
 
         ui.callBtn.addEventListener('click', () => makeCall(ui.recipientIdInput.value.trim()));
 
-        ui.acceptCallBtn.addEventListener('click', () => {
+        ui.acceptCallBtn.addEventListener('click', async () => {
             stopRingtone();
-            state.currentCallDirection = 'incoming'; // FIX: Set call direction
-            state.dataConnection.send({ type: 'call_accepted' });
+            const audioReady = await initializeAudio();
+            const micReady = await requestMicrophone();
+            if (!audioReady || !micReady) {
+                cleanUpCall();
+                return;
+            }
+
+            state.currentCallDirection = 'incoming';
+            state.mediaConnection.answer(state.localStream);
+            state.mediaConnection.on('stream', remoteStream => {
+                ui.remoteAudio.srcObject = remoteStream;
+            });
             state.dataConnection.on('data', (data) => handleData(data, state.dataConnection.peer));
             addCallToHistory('incoming', state.dataConnection.peer);
+            showInCallUI(state.dataConnection.peer);
         });
         
         ui.rejectCallBtn.addEventListener('click', () => {
@@ -498,11 +500,9 @@
         });
 
         ui.hangUpBtn.addEventListener('click', async () => {
-            await initializeAudio();
             if(isAudioInitialized) sounds.endCallTone.triggerAttackRelease('A4', '0.5');
             if (state.dataConnection) {
                 state.dataConnection.send({ type: 'hang_up' });
-                // FIX: Use stored direction for accurate history
                 addCallToHistory(state.currentCallDirection, state.dataConnection.peer);
             }
             setTimeout(cleanUpCall, 100);
@@ -559,7 +559,6 @@
             const id = ui.addContactId.textContent;
             const name = ui.addContactName.value.trim();
             if (name) {
-                // Check if contact already exists, if so, update it.
                 const existingContact = state.contacts.find(c => c.id === id);
                 if (existingContact) {
                     existingContact.name = name;
@@ -578,9 +577,6 @@
         });
 
         // --- INITIALIZATION ---
-        // FIX: Add a one-time event listener to initialize audio on the first user interaction.
-        document.body.addEventListener('click', initializeAudio, { once: true });
-
         window.onload = () => {
             loadContacts();
             loadHistory();
