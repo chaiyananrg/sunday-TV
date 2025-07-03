@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunday TV</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        .sky-background { background: linear-gradient(170deg, #0f172a 0%, #1e293b 60%, #334155 100%); }
+        .glass-panel { background: rgba(30, 41, 59, 0.25); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
+        .glass-input { background: rgba(51, 65, 85, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 0.75rem; transition: all 0.2s ease; }
+        .glass-input:focus { background: rgba(71, 85, 105, 0.6); border-color: rgba(99, 102, 241, 0.8); box-shadow: none; outline: none; }
+        .custom-selector-panel { position: absolute; z-index: 50; top: 100%; left: 0; right: 0; margin-top: 0.5rem; animation: fadeIn 0.3s ease-out; }
+        #remote-video, #local-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        #remote-video { background-color: #111; }
+        .video-container { display: flex; width: 100%; height: 100%; }
+        .video-wrapper { position: relative; overflow: hidden; background-color: #111; }
+        .nickname-overlay { position: absolute; bottom: 1rem; left: 1rem; background: rgba(0,0,0,0.5); padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; color: white; }
+        @media (orientation: portrait) { .video-container { flex-direction: column; } .video-wrapper { width: 100%; height: 50%; } }
+        @media (orientation: landscape) { .video-container { flex-direction: row; } .video-wrapper { width: 50%; height: 100%; } }
+        #floating-chat-container { background: rgba(17, 24, 39, 0.75); border-top: 1px solid rgba(255, 255, 255, 0.1); border-right: 1px solid rgba(255, 255, 255, 0.1); border-top-right-radius: 1.5rem; }
+        .chat-message.faded-out { opacity: 0; transform: translateY(-10px); transition: all 0.5s ease; }
+        .themed-btn { border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #FFC107; box-shadow: 0 4px 10px rgba(0,0,0,0.2), inset 0 -4px 6px rgba(0,0,0,0.1); transition: all 0.2s ease-in-out; }
+        .themed-btn:hover { transform: scale(1.1); background-color: #FFD54F; }
+        .sun-loader { width: 80px; height: 80px; position: relative; animation: spin 10s linear infinite; }
+        .sun-loader .sun-body { width: 50px; height: 50px; background-color: #FFC107; border-radius: 50%; position: absolute; top: 15px; left: 15px; }
+        .sun-loader .sun-ray { background-color: #FFC107; width: 6px; height: 18px; border-radius: 3px; position: absolute; top: -3px; left: 37px; }
+        .sun-ray:nth-child(2) { transform: rotate(45deg); top: 8px; left: 58px; } .sun-ray:nth-child(3) { transform: rotate(90deg); top: 31px; left: 65px; } .sun-ray:nth-child(4) { transform: rotate(135deg); top: 54px; left: 58px; } .sun-ray:nth-child(5) { transform: rotate(180deg); top: 67px; left: 37px; } .sun-ray:nth-child(6) { transform: rotate(225deg); top: 54px; left: 16px; } .sun-ray:nth-child(7) { transform: rotate(270deg); top: 31px; left: 9px; } .sun-ray:nth-child(8) { transform: rotate(315deg); top: 8px; left: 16px; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden dark">
+    
+    <!-- App Loading Screen -->
+    <div id="app-loading-view" class="sky-background w-full h-full flex flex-col items-center justify-center p-4">
+        <img src="https://img2.pic.in.th/pic/sunday-TV.png" alt="Sunday TV Logo" class="w-48 h-auto mb-8 drop-shadow-lg animate-pulse" onerror="this.style.display='none'">
+        <p class="text-gray-300">กำลังโหลดแอปพลิเคชัน...</p>
+    </div>
+
+    <!-- Auth View (Login/Register) -->
+    <div id="auth-view" class="hidden sky-background w-full h-full flex items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <!-- Login Form -->
+            <div id="login-form" class="glass-panel p-8 text-center">
+                <img src="https://img2.pic.in.th/pic/sunday-TV.png" alt="Sunday TV Logo" class="w-40 h-auto mb-4 mx-auto drop-shadow-lg" onerror="this.style.display='none'">
+                <h2 class="text-3xl font-bold text-white mb-6">เข้าสู่ระบบ</h2>
+                <div class="space-y-4 text-left">
+                    <div><label for="login-email" class="block mb-1 text-sm font-medium text-gray-300">อีเมล</label><input type="email" id="login-email" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="email@example.com"></div>
+                    <div><label for="login-password" class="block mb-1 text-sm font-medium text-gray-300">รหัสผ่าน</label><input type="password" id="login-password" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="••••••••"></div>
+                </div>
+                <button id="login-btn" class="w-full mt-8 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-200 active:scale-95 shadow-md">เข้าสู่ระบบ</button>
+                <p class="mt-6 text-sm text-gray-400">ยังไม่มีบัญชี? <button id="show-register-btn" class="font-medium text-yellow-400 hover:underline">สมัครสมาชิก</button></p>
+            </div>
+            <!-- Register Form -->
+            <div id="register-form" class="hidden glass-panel p-8 text-center">
+                <h2 class="text-3xl font-bold text-white mb-6">สร้างบัญชีใหม่</h2>
+                <div class="space-y-4 text-left">
+                    <div><label for="register-email" class="block mb-1 text-sm font-medium text-gray-300">อีเมล</label><input type="email" id="register-email" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="email@example.com"></div>
+                    <div><label for="register-password" class="block mb-1 text-sm font-medium text-gray-300">รหัสผ่าน</label><input type="password" id="register-password" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="••••••••"></div>
+                </div>
+                <button id="register-btn" class="w-full mt-8 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-200 active:scale-95 shadow-md">สมัครสมาชิก</button>
+                <p class="mt-6 text-sm text-gray-400">มีบัญชีอยู่แล้ว? <button id="show-login-btn" class="font-medium text-yellow-400 hover:underline">เข้าสู่ระบบ</button></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 1: Profile Setup Modal -->
+    <div id="profile-modal" class="hidden sky-background fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="glass-panel p-8 w-full max-w-md text-center">
+            <h2 class="text-3xl font-bold text-white mb-2">สร้างโปรไฟล์ของคุณ</h2>
+            <p class="text-gray-400 mb-8">ข้อมูลนี้จะแสดงให้เพื่อนของคุณเห็น</p>
+            <div class="space-y-4 text-left">
+                <div> <label for="nickname-input" class="block mb-1 text-sm font-medium text-gray-300">ชื่อเล่น</label> <input type="text" id="nickname-input" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="ใส่ชื่อเล่นของคุณ"> </div>
+                <div> <label for="age-input" class="block mb-1 text-sm font-medium text-gray-300">อายุ</label> <input type="number" id="age-input" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="เช่น 25"> </div>
+                <div> <label for="gender-select" class="block mb-1 text-sm font-medium text-gray-300">เพศ</label> <select id="gender-select" class="w-full p-3 glass-input text-gray-200 focus:ring-0"> <option>ชาย</option> <option>หญิง</option> <option>LGBTQ</option> <option>สาวหล่อ</option> <option>เกย์</option> <option>กำหนดเอง</option> <option>ไม่ระบุ</option> </select> </div>
+                <div id="custom-gender-container" class="hidden space-y-4">
+                    <div> <label for="custom-gender-name-input" class="block mb-1 text-sm font-medium text-gray-300">ระบุเพศของคุณ</label> <input type="text" id="custom-gender-name-input" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="เช่น Non-binary"> </div>
+                    <div> <label for="custom-gender-emoji-input" class="block mb-1 text-sm font-medium text-gray-300">อิโมจิประจำตัว</label> <input type="text" id="custom-gender-emoji-input" class="w-full p-3 glass-input text-gray-200 focus:ring-0" placeholder="ใส่ 1 อิโมจิ" maxlength="2"> </div>
+                </div>
+            </div>
+            <button id="save-profile-btn" class="w-full mt-8 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-200 active:scale-95 shadow-md">บันทึกและถัดไป</button>
+        </div>
+    </div>
+    
+    <!-- Page 2: Country Setup -->
+    <div id="country-setup-view" class="sky-background w-full h-full flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden hidden">
+        <div class="glass-panel p-8 w-full max-w-lg text-center fade-in">
+             <h2 class="text-3xl font-bold text-white mb-2">ตั้งค่าการค้นหา</h2>
+             <p class="text-gray-400 mb-8">เลือกประเทศเพื่อการจับคู่ที่ดียิ่งขึ้น</p>
+             <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div id="my-country-selector" class="relative">
+                    <label class="block mb-1 text-sm font-medium text-gray-300">ประเทศของคุณ</label>
+                    <button type="button" class="selector-btn w-full p-3 glass-input text-gray-200 flex items-center justify-between"></button>
+                </div>
+                <div id="partner-country-selector" class="relative">
+                    <label class="block mb-1 text-sm font-medium text-gray-300">ค้นหาเพื่อนจาก</label>
+                    <button type="button" class="selector-btn w-full p-3 glass-input text-gray-200 flex items-center justify-between"></button>
+                </div>
+            </div>
+            <button id="save-countries-btn" class="w-full mt-8 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-200 active:scale-95 shadow-md">บันทึกและไปที่ล็อบบี้</button>
+        </div>
+    </div>
+
+    <!-- Page 3: Lobby / Start View -->
+    <div id="settings-view" class="sky-background w-full h-full flex flex-col p-4 sm:p-6 relative overflow-hidden hidden">
+        <header class="w-full max-w-7xl mx-auto flex justify-between items-center p-4 glass-panel mb-6">
+            <img src="https://img2.pic.in.th/pic/sunday-TV.png" alt="Sunday TV Logo" class="h-10 w-auto" onerror="this.style.display='none'">
+            <div class="flex items-center gap-4">
+                <button id="edit-profile-btn" class="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"><i class="bi bi-person-fill text-xl"></i> แก้ไขโปรไฟล์</button>
+                <button id="edit-countries-btn" class="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"><i class="bi bi-globe-americas text-xl"></i> ตั้งค่าประเทศ</button>
+                <button id="logout-btn" class="flex items-center gap-2 text-red-400 hover:text-red-300 transition-colors"><i class="bi bi-box-arrow-right text-xl"></i> ออกจากระบบ</button>
+            </div>
+        </header>
+        <main class="w-full max-w-7xl mx-auto flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
+            <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden">
+                <div class="glass-panel p-6 flex flex-col">
+                    <h2 class="text-2xl font-bold text-gray-200 mb-4 text-center flex-shrink-0">ออนไลน์ทั้งหมด</h2>
+                    <div id="online-users-list" class="flex-grow overflow-y-auto pr-2 space-y-3"></div>
+                </div>
+                <div class="glass-panel p-6 flex flex-col">
+                    <h2 class="text-2xl font-bold text-gray-200 mb-4 text-center flex-shrink-0">กำลังคุยกันอยู่</h2>
+                    <div id="paired-users-list" class="flex-grow overflow-y-auto pr-2 space-y-3"></div>
+                </div>
+            </div>
+            <div class="lg:col-span-1 glass-panel p-8 flex flex-col items-center justify-center">
+                 <h2 class="text-2xl font-bold text-gray-200 mb-4 text-center">พร้อมรึยัง?</h2>
+                 <p class="text-gray-400 mb-8 text-center">กดปุ่มเพื่อเริ่มค้นหาเพื่อนใหม่ได้เลย!</p>
+                 <button id="start-btn" class="w-48 h-48 bg-yellow-400 hover:bg-yellow-500 rounded-full flex flex-col items-center justify-center text-gray-800 font-bold text-2xl transition-transform duration-200 active:scale-95 shadow-lg" disabled>
+                    <i class="bi bi-play-fill text-7xl"></i>
+                    เริ่มค้นหา
+                </button>
+                <div id="user-id-display" class="mt-4 text-xs text-gray-400 text-center"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading View -->
+    <div id="loading-view" class="hidden sky-background w-full h-full flex-col items-center justify-center text-center p-6">
+        <div class="sun-loader mb-8"> <div class="sun-body"></div> <div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div><div class="sun-ray"></div> </div>
+        <h2 class="text-3xl font-semibold text-white text-shadow">กำลังค้นหาเพื่อน...</h2>
+        <button id="cancel-search-btn" class="mt-12 bg-white/30 hover:bg-white/50 backdrop-blur-sm text-white font-bold py-3 px-8 rounded-full transition duration-300">ยกเลิก</button>
+    </div>
+
+    <!-- Chat View -->
+    <div id="chat-view" class="hidden w-full h-full bg-black relative">
+        <div class="video-container">
+            <div class="video-wrapper"><video id="remote-video" class="video-player" autoplay playsinline></video><div id="partner-nickname-display" class="nickname-overlay"></div></div>
+            <div class="video-wrapper"><video id="local-video" class="video-player" autoplay playsinline muted></video><div id="my-nickname-display" class="nickname-overlay"></div></div>
+        </div>
+        <div class="absolute inset-0 flex flex-col pointer-events-none">
+            <div class="w-full p-4 flex justify-end pointer-events-auto">
+                <button id="fullscreen-btn" class="p-3 rounded-full bg-black/30 hover:bg-black/50 transition-colors"><i id="fullscreen-icon" class="bi bi-arrows-fullscreen text-white text-xl"></i></button>
+            </div>
+            <div class="flex-grow"></div>
+            <div class="w-full p-4 flex justify-between items-end pointer-events-auto">
+                <div id="floating-chat-container" class="w-80 max-h-[40vh] bg-gray-900/70 backdrop-blur-sm border border-white/10 rounded-t-2xl flex flex-col">
+                    <div class="p-3 border-b border-white/10 flex-shrink-0"><p id="partner-info" class="text-xs text-gray-300"></p></div>
+                    <div id="messages" class="flex-grow p-3 space-y-3 overflow-y-auto"></div>
+                    <div class="p-2 border-t border-white/10 flex-shrink-0"><div class="flex gap-2"><input type="text" id="chat-input" class="flex-grow p-2 glass-input text-gray-200 text-sm" placeholder="พิมพ์ข้อความ..."><button id="send-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold p-3 rounded-lg flex-shrink-0"><i class="bi bi-send-fill"></i></button></div></div>
+                </div>
+                <div class="flex items-center justify-center gap-6">
+                    <button id="stop-btn" class="themed-btn w-16 h-16 bg-red-500 hover:bg-red-600"><i class="bi bi-telephone-fill text-white text-2xl"></i></button>
+                    <button id="next-btn" class="themed-btn w-20 h-20"><i class="bi bi-arrow-right text-white text-5xl"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="alert-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="glass-panel p-6 w-full max-w-sm text-center text-gray-200">
+            <p id="alert-modal-message" class="text-lg mb-6"></p>
+            <button id="alert-modal-close" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-3 px-6 rounded-lg active:scale-95 transition-transform">เข้าใจแล้ว</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, query, where, serverTimestamp, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+        // Firebase Config and Initialization...
+        const firebaseConfig = {
+            apiKey: "AIzaSyAyLE1l-eiPPW-fJIvL2uULmDWXcKRhoEM",
+            authDomain: "sunday-tv-videocall.firebaseapp.com",
+            projectId: "sunday-tv-videocall",
+            storageBucket: "sunday-tv-videocall.firebasestorage.app",
+            messagingSenderId: "456379728267",
+            appId: "1:456379728267:web:815ef8f00b815e42172f8e",
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Global State...
+        let localStream, currentCall, currentDataConnection, peer, userId;
+        let heartbeatInterval;
+        let allCountries = [];
+        let onlineUsers = new Map();
+        let settings = { nickname: '', age: '', gender: '', myCountry: 'TH', partnerCountry: 'worldwide', customGenderName: '', customGenderEmoji: '' };
+        let selectorUpdaters = {};
+        
+        const presenceCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/presence`);
+        const usersCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/users`);
+
+        const ui = {
+            appLoadingView: document.getElementById('app-loading-view'),
+            authView: document.getElementById('auth-view'), loginForm: document.getElementById('login-form'),
+            registerForm: document.getElementById('register-form'), loginEmailInput: document.getElementById('login-email'),
+            loginPasswordInput: document.getElementById('login-password'), loginBtn: document.getElementById('login-btn'),
+            registerEmailInput: document.getElementById('register-email'), registerPasswordInput: document.getElementById('register-password'),
+            registerBtn: document.getElementById('register-btn'), showLoginBtn: document.getElementById('show-login-btn'),
+            showRegisterBtn: document.getElementById('show-register-btn'), logoutBtn: document.getElementById('logout-btn'),
+            profileModal: document.getElementById('profile-modal'), nicknameInput: document.getElementById('nickname-input'),
+            ageInput: document.getElementById('age-input'), genderSelect: document.getElementById('gender-select'),
+            customGenderContainer: document.getElementById('custom-gender-container'),
+            customGenderNameInput: document.getElementById('custom-gender-name-input'),
+            customGenderEmojiInput: document.getElementById('custom-gender-emoji-input'),
+            saveProfileBtn: document.getElementById('save-profile-btn'),
+            countrySetupView: document.getElementById('country-setup-view'),
+            saveCountriesBtn: document.getElementById('save-countries-btn'),
+            settingsView: document.getElementById('settings-view'), loadingView: document.getElementById('loading-view'),
+            chatView: document.getElementById('chat-view'), startBtn: document.getElementById('start-btn'),
+            editProfileBtn: document.getElementById('edit-profile-btn'),
+            editCountriesBtn: document.getElementById('edit-countries-btn'),
+            cancelSearchBtn: document.getElementById('cancel-search-btn'),
+            stopBtn: document.getElementById('stop-btn'), nextBtn: document.getElementById('next-btn'),
+            localVideo: document.getElementById('local-video'), remoteVideo: document.getElementById('remote-video'),
+            userIdDisplay: document.getElementById('user-id-display'), alertModal: document.getElementById('alert-modal'),
+            alertModalMessage: document.getElementById('alert-modal-message'), alertModalClose: document.getElementById('alert-modal-close'),
+            onlineUsersList: document.getElementById('online-users-list'),
+            pairedUsersList: document.getElementById('paired-users-list'),
+            myNicknameDisplay: document.getElementById('my-nickname-display'),
+            partnerNicknameDisplay: document.getElementById('partner-nickname-display'),
+            chatPanel: {
+                messages: document.getElementById('messages'), input: document.getElementById('chat-input'),
+                sendBtn: document.getElementById('send-btn'), partnerInfo: document.getElementById('partner-info'),
+            },
+            fullscreenBtn: document.getElementById('fullscreen-btn'),
+            fullscreenIcon: document.getElementById('fullscreen-icon'),
+        };
+        
+        // **FIXED**: All functions are now declared before being called.
+        
+        function showAlert(message) { ui.alertModalMessage.textContent = message; ui.alertModal.classList.add('flex'); ui.alertModal.classList.remove('hidden'); }
+        
+        const genderEmojiMap = { 'ชาย': '🧒🏻', 'หญิง': '🧑🏻', 'LGBTQ': '💃🏻', 'สาวหล่อ': '🧑🏻‍🚀', 'เกย์': '🧑🏻‍⚕️', 'ไม่ระบุ': '🌻' };
+        function getGenderEmoji(gender, customEmoji) {
+            if (gender === 'กำหนดเอง' && customEmoji) return customEmoji;
+            return genderEmojiMap[gender] || '🤔';
+        }
+        function getFlagEmoji(countryCode) {
+            if (countryCode === 'worldwide') return '🌍';
+            return countryCode ? countryCode.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397)) : '🌐';
+        }
+
+        function showView(viewId) {
+            ['app-loading-view', 'auth-view', 'profile-modal', 'country-setup-view', 'settings-view', 'loading-view', 'chat-view'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (id === viewId) {
+                        el.classList.remove('hidden');
+                        el.classList.add('flex');
+                    } else {
+                        el.classList.add('hidden');
+                        el.classList.remove('flex');
+                    }
+                }
+            });
+        }
+        
+        function createCustomSelector(containerId, options) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const btn = container.querySelector('.selector-btn');
+            
+            if (!btn.querySelector('.selector-label')) {
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'selector-label flex items-center';
+                const arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                arrowSvg.setAttribute('class', 'selector-arrow w-5 h-5 text-gray-400 transition-transform duration-300');
+                arrowSvg.setAttribute('fill', 'none');
+                arrowSvg.setAttribute('viewBox', '0 0 24 24');
+                arrowSvg.setAttribute('stroke', 'currentColor');
+                arrowSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />';
+                btn.append(labelSpan, arrowSvg);
+
+                const panelDiv = document.createElement('div');
+                panelDiv.className = 'custom-selector-panel glass-panel p-2 shadow-xl hidden';
+                panelDiv.innerHTML = `<div class="relative p-2"><input type="text" placeholder="ค้นหา..." class="selector-search w-full pl-4 pr-4 py-2 glass-input text-gray-200 focus:ring-0" /></div><ul class="selector-list max-h-60 overflow-y-auto"></ul>`;
+                container.appendChild(panelDiv);
+            }
+            
+            const label = container.querySelector('.selector-label');
+            const arrow = container.querySelector('.selector-arrow');
+            const panel = container.querySelector('.custom-selector-panel');
+            const searchInput = container.querySelector('.selector-search');
+            const list = container.querySelector('.selector-list');
+
+            const updateSelectionDisplay = (value) => {
+                const country = allCountries.find(c => c.alpha2 === value) || { name: 'ทั่วโลก', alpha2: 'worldwide' };
+                label.innerHTML = `<span class="text-xl mr-3">${getFlagEmoji(country.alpha2)}</span> ${country.name}`;
+            };
+
+            const renderList = (filter = '') => {
+                list.innerHTML = '';
+                const lowerFilter = filter.toLowerCase();
+                let currentCountries = options.isPartner ? [{ name: '🌍 ทั่วโลก', alpha2: 'worldwide', enName: 'Worldwide' }, ...allCountries] : allCountries;
+                
+                const filtered = currentCountries.filter(c => 
+                    c.name.toLowerCase().includes(lowerFilter) || 
+                    (c.enName && c.enName.toLowerCase().includes(lowerFilter)) ||
+                    c.alpha2.toLowerCase().includes(lowerFilter)
+                );
+
+                if (filtered.length === 0) {
+                    list.innerHTML = `<li class="p-3 text-center text-gray-400">ไม่พบประเทศ</li>`;
+                    return;
+                }
+
+                filtered.forEach(country => {
+                    const li = document.createElement('li');
+                    li.className = 'p-3 flex items-center rounded-lg cursor-pointer hover:bg-white/10 transition-colors text-gray-200';
+                    li.dataset.value = country.alpha2;
+                    li.innerHTML = `<span class="text-xl mr-3">${getFlagEmoji(country.alpha2)}</span> ${country.name}`;
+                    list.appendChild(li);
+                });
+            };
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = panel.classList.contains('hidden');
+                document.querySelectorAll('.custom-selector-panel').forEach(p => p.classList.add('hidden'));
+                if(isHidden) {
+                    panel.classList.remove('hidden');
+                    arrow.classList.add('rotate-180');
+                    renderList();
+                    searchInput.focus();
+                } else {
+                    arrow.classList.remove('rotate-180');
+                }
+            });
+
+            searchInput.addEventListener('keyup', () => renderList(searchInput.value));
+
+            list.addEventListener('click', (e) => {
+                const li = e.target.closest('li');
+                if (li && li.dataset.value) {
+                    const newValue = li.dataset.value;
+                    options.setter(newValue);
+                    updateSelectionDisplay(newValue);
+                    panel.classList.add('hidden');
+                    arrow.classList.remove('rotate-180');
+                }
+            });
+            
+            selectorUpdaters[containerId] = () => updateSelectionDisplay(options.getter());
+            selectorUpdaters[containerId]();
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.relative')) {
+                document.querySelectorAll('.custom-selector-panel').forEach(p => p.classList.add('hidden'));
+                document.querySelectorAll('.selector-arrow').forEach(a => a.classList.remove('rotate-180'));
+            }
+        });
+
+        async function loadCountries() {
+            const defaultCountries = [ { "name": "ไทย", "enName": "Thailand", "alpha2": "TH" }, { "name": "สหรัฐอเมริกา", "enName": "United States", "alpha2": "US" }, { "name": "ญี่ปุ่น", "enName": "Japan", "alpha2": "JP" }, { "name": "เกาหลีใต้", "enName": "South Korea", "alpha2": "KR" }, { "name": "สหราชอาณาจักร", "enName": "United Kingdom", "alpha2": "GB" }];
+            try {
+                const response = await fetch('https://raw.githubusercontent.com/ponlawat-w/country-list-th/refs/heads/master/country-list-th.json');
+                if (!response.ok) throw new Error(`HTTP error`);
+                allCountries = await response.json();
+            } catch (error) {
+                console.warn("Could not load country list from API, using fallback.", error);
+                allCountries = defaultCountries;
+            } finally {
+                allCountries.sort((a, b) => a.name.localeCompare(b.name, 'th'));
+                settings.myCountry = settings.myCountry || 'TH';
+                settings.partnerCountry = settings.partnerCountry || 'worldwide';
+                createCustomSelector('my-country-selector', { getter: () => settings.myCountry, setter: (v) => settings.myCountry = v, isPartner: false });
+                createCustomSelector('partner-country-selector', { getter: () => settings.partnerCountry, setter: (v) => settings.partnerCountry = v, isPartner: true });
+            }
+        }
+        
+        async function updatePresence(status, peerId = null, talkingTo = null) {
+            if (!userId) return;
+            const data = { status, last_seen: serverTimestamp(), ...settings };
+            if (peerId) data.peerId = peerId;
+            data.talkingTo = talkingTo;
+            await setDoc(doc(presenceCollection, userId), data, { merge: true });
+        };
+        
+        function listenForOnlineUsers() {
+            const q = query(presenceCollection);
+            onSnapshot(q, (snapshot) => {
+                const thirtySecondsAgo = Date.now() - 30000;
+                const currentOnlineUsers = new Map();
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    if (data.last_seen && data.last_seen.toMillis() > thirtySecondsAgo) {
+                       currentOnlineUsers.set(doc.id, data);
+                    }
+                });
+                onlineUsers = currentOnlineUsers;
+                displayOnlineUsers();
+                displayPairedUsers();
+            });
+        };
+        
+        function displayOnlineUsers() {
+            const onlineList = Array.from(onlineUsers.entries())
+                .filter(([id, data]) => id !== userId && data.status !== 'busy');
+            
+            if (onlineList.length === 0) {
+                ui.onlineUsersList.innerHTML = `<div class="text-center text-gray-400 p-4"><p>ไม่มีใครออนไลน์อยู่</p></div>`;
+                return;
+            }
+            ui.onlineUsersList.innerHTML = onlineList.map(([id, user]) => {
+                const flag = getFlagEmoji(user.country);
+                const genderEmoji = getGenderEmoji(user.gender, user.customGenderEmoji);
+                const genderText = user.gender === 'กำหนดเอง' ? user.customGenderName : user.gender;
+                return `<div class="flex items-center p-3 rounded-lg bg-slate-800/50">
+                    <span class="text-3xl mr-2">${genderEmoji}</span>
+                    <span class="text-3xl mr-4">${flag}</span>
+                    <div>
+                        <p class="font-bold text-white">${user.nickname || 'Anonymous'}</p>
+                        <p class="text-xs text-gray-400">เพศ ${genderText}, อายุ ${user.age}</p>
+                    </div>
+                    <span class="ml-auto w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
+                </div>`;
+            }).join('');
+        };
+
+        function displayPairedUsers() {
+            const pairedList = [];
+            const processed = new Set();
+            onlineUsers.forEach((userA, idA) => {
+                if (userA.status === 'busy' && userA.talkingTo && !processed.has(idA)) {
+                    const userB = onlineUsers.get(userA.talkingTo);
+                    if (userB && userB.talkingTo === idA) {
+                        pairedList.push({userA, userB});
+                        processed.add(idA);
+                        processed.add(userA.talkingTo);
+                    }
+                }
+            });
+
+            if (pairedList.length === 0) {
+                ui.pairedUsersList.innerHTML = `<div class="text-center text-gray-400 p-4"><p>ยังไม่มีใครคุยกัน</p></div>`;
+                return;
+            }
+
+            ui.pairedUsersList.innerHTML = pairedList.map(({userA, userB}) => {
+                return `<div class="flex items-center justify-center p-3 rounded-lg bg-slate-800/50 gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">${getGenderEmoji(userA.gender, userA.customGenderEmoji)}</span>
+                        <span class="text-white text-sm">${userA.nickname || '...'}</span>
+                    </div>
+                    <i class="bi bi-heart-fill text-red-500 text-xl"></i>
+                    <div class="flex items-center gap-2">
+                         <span class="text-white text-sm">${userB.nickname || '...'}</span>
+                         <span class="text-2xl">${getGenderEmoji(userB.gender, userB.customGenderEmoji)}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        };
+
+        function resetToSettings() {
+            showView('settings-view');
+            if (selectorUpdaters['my-country-selector']) selectorUpdaters['my-country-selector']();
+            if (selectorUpdaters['partner-country-selector']) selectorUpdaters['partner-country-selector']();
+        };
+
+        async function hangUp(findNext = false) {
+            clearTimeout(searchTimeout);
+            if (currentCall) currentCall.close();
+            if (currentDataConnection) currentDataConnection.close();
+            if (localStream) localStream.getTracks().forEach(track => track.stop());
+            
+            localStream = currentCall = currentDataConnection = null;
+            if(ui.remoteVideo) ui.remoteVideo.srcObject = null;
+            if(ui.localVideo) ui.localVideo.srcObject = null;
+            
+            if (peer && !peer.destroyed) {
+                await updatePresence('online', peer.id, null);
+            }
+
+            if (findNext) await startSearch();
+            else resetToSettings();
+        };
+        
+        function switchToChatView(stream) {
+            showView('chat-view');
+            ui.remoteVideo.srcObject = stream;
+            ui.chatPanel.messages.innerHTML = '';
+            ui.chatPanel.partnerInfo.textContent = 'กำลังรอข้อมูลโปรไฟล์...';
+            ui.partnerNicknameDisplay.textContent = 'คู่สนทนา';
+        };
+
+        async function startSearch() {
+            if (ui.startBtn.disabled) return;
+            showView('loading-view');
+            
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                ui.localVideo.srcObject = localStream;
+            } catch (error) { showAlert("กรุณาอนุญาตให้เข้าถึงกล้องและไมโครโฟน"); resetToSettings(); return; }
+
+            await updatePresence('waiting', peer.id, null);
+
+            searchTimeout = setTimeout(() => { showAlert("ไม่พบผู้ใช้งานในขณะนี้ กรุณาลองใหม่อีกครั้ง"); hangUp(false); }, 20000);
+            
+            const availablePeers = Array.from(onlineUsers.entries())
+                .filter(([id, data]) => id !== userId && data.status === 'waiting' && data.peerId && (settings.partnerCountry === 'worldwide' || data.country === settings.partnerCountry));
+
+            if (availablePeers.length > 0) {
+                const [partnerUserId, partnerData] = availablePeers[Math.floor(Math.random() * availablePeers.length)];
+                clearTimeout(searchTimeout);
+                connectToPeer(partnerData.peerId, partnerUserId);
+            }
+        };
+        
+        function connectToPeer(peerId, partnerUserId) {
+            const call = peer.call(peerId, localStream);
+            const dataConnection = peer.connect(peerId);
+            handleCall(call, partnerUserId);
+            handleDataConnection(dataConnection);
+        };
+
+        function handleCall(call, partnerUserId) {
+            call.on('stream', (remoteStream) => {
+                updatePresence('busy', peer.id, partnerUserId);
+                clearTimeout(searchTimeout);
+                switchToChatView(remoteStream);
+            });
+            call.on('close', () => hangUp(true));
+            call.on('error', (err) => { console.error('Call error:', err); hangUp(true); });
+            currentCall = call;
+        };
+
+        function handleDataConnection(conn) {
+            conn.on('open', () => {
+                conn.send({ type: 'profile', payload: settings });
+                let partnerUserId = null;
+                for(let [uid, data] of onlineUsers.entries()){
+                    if(data.peerId === conn.peer){
+                        partnerUserId = uid;
+                        break;
+                    }
+                }
+                if(partnerUserId){
+                    updatePresence('busy', peer.id, partnerUserId);
+                }
+            });
+            conn.on('data', (data) => {
+                if (data.type === 'profile') {
+                    const { nickname, age, gender, customGenderName, country } = data.payload;
+                    const countryName = allCountries.find(c => c.alpha2 === country)?.name || country;
+                    const genderText = gender === 'กำหนดเอง' ? customGenderName : gender;
+                    ui.chatPanel.partnerInfo.textContent = `คุยกับ: เพศ ${genderText}, อายุ ${age}, จาก ${countryName}`;
+                    ui.partnerNicknameDisplay.textContent = nickname || 'คู่สนทนา';
+                } else if (data.type === 'chat') {
+                    appendMessage(data.payload, 'partner');
+                }
+            });
+            currentDataConnection = conn;
+        };
+        
+        function appendMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message flex transition-all duration-500 ${sender === 'me' ? 'justify-end' : 'justify-start'}`;
+            const p = document.createElement('p');
+            p.textContent = text;
+            p.className = `px-3 py-2 rounded-lg max-w-xs ${sender === 'me' ? 'bg-indigo-500 text-white' : 'bg-gray-700 text-gray-200'}`;
+            messageDiv.appendChild(p);
+            ui.chatPanel.messages.appendChild(messageDiv);
+            ui.chatPanel.messages.scrollTop = ui.chatPanel.messages.scrollHeight;
+
+            const maxMessages = 10;
+            while (ui.chatPanel.messages.children.length > maxMessages) {
+                const firstMessage = ui.chatPanel.messages.firstChild;
+                firstMessage.classList.add('faded-out');
+                setTimeout(() => firstMessage.remove(), 500);
+            }
+        };
+        
+        function sendChatMessage() {
+            const message = ui.chatPanel.input.value.trim();
+            if (message && currentDataConnection) {
+                currentDataConnection.send({ type: 'chat', payload: message });
+                appendMessage(message, 'me');
+                ui.chatPanel.input.value = '';
+            }
+        };
+
+        function initializePeer() {
+            if (peer && !peer.destroyed) peer.destroy();
+            peer = new Peer();
+            peer.on('open', async (id) => {
+                console.log('PeerJS connection established. New ID is: ' + id);
+                ui.startBtn.disabled = false;
+                await updatePresence('online', id, null);
+                if (heartbeatInterval) clearInterval(heartbeatInterval);
+                heartbeatInterval = setInterval(() => updatePresence('online', id, currentCall ? currentCall.peer : null), 15000);
+            });
+            peer.on('connection', (conn) => {
+                handleDataConnection(conn);
+            });
+            peer.on('call', async (call) => {
+                try {
+                    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    ui.localVideo.srcObject = localStream;
+                    call.answer(localStream);
+                    let partnerUserId = null;
+                    for(let [uid, data] of onlineUsers.entries()){
+                        if(data.peerId === call.peer){
+                            partnerUserId = uid;
+                            break;
+                        }
+                    }
+                    handleCall(call, partnerUserId);
+                } catch (err) { console.error('Failed to get local stream for incoming call', err); }
+            });
+            peer.on('error', (err) => { console.error('PeerJS error:', err); showAlert(`การเชื่อมต่อขัดข้อง (โค้ด: ${err.type}). กำลังพยายามเชื่อมต่อใหม่...`); setTimeout(initializePeer, 3000); });
+            peer.on('disconnected', () => { console.log("Peer disconnected. Attempting to reconnect..."); ui.startBtn.disabled = true; peer.reconnect(); });
+            peer.on('close', () => { clearInterval(heartbeatInterval); });
+        };
+
+        async function fetchUserProfile(uid) {
+            const userDocRef = doc(usersCollection, uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+                settings = { ...userDoc.data() };
+                return true;
+            }
+            return false;
+        };
+
+        async function saveUserProfile(profileData) {
+            if (!userId) return;
+            settings = { ...settings, ...profileData };
+            await setDoc(doc(usersCollection, userId), settings, { merge: true });
+        };
+
+        async function handleLogin() {
+            const email = ui.loginEmailInput.value;
+            const password = ui.loginPasswordInput.value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                showAlert(`เข้าสู่ระบบล้มเหลว: ${error.message}`);
+            }
+        };
+
+        async function handleRegister() {
+            const email = ui.registerEmailInput.value;
+            const password = ui.registerPasswordInput.value;
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                showAlert(`สมัครสมาชิกล้มเหลว: ${error.message}`);
+            }
+        };
+
+        async function handleLogout() {
+            await updatePresence('offline');
+            if (peer && !peer.destroyed) peer.destroy();
+            clearInterval(heartbeatInterval);
+            await signOut(auth);
+        };
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.error(err));
+            } else {
+                document.exitFullscreen();
+            }
+        };
+
+        function updateFullscreenIcon() {
+            if (document.fullscreenElement) {
+                ui.fullscreenIcon.classList.remove('bi-arrows-fullscreen');
+                ui.fullscreenIcon.classList.add('bi-fullscreen-exit');
+            } else {
+                ui.fullscreenIcon.classList.add('bi-arrows-fullscreen');
+                ui.fullscreenIcon.classList.remove('bi-fullscreen-exit');
+            }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                ui.userIdDisplay.textContent = `ID: ${userId.substring(0, 12)}...`;
+                
+                const profileExists = await fetchUserProfile(userId);
+                
+                initializePeer();
+                listenForOnlineUsers();
+
+                if (!profileExists || !settings.nickname || !settings.age || !settings.gender) {
+                    showView('profile-modal');
+                } else {
+                    ui.myNicknameDisplay.textContent = settings.nickname;
+                    await loadCountries();
+                    showView('settings-view');
+                }
+            } else {
+                userId = null;
+                if (peer && !peer.destroyed) peer.destroy();
+                clearInterval(heartbeatInterval);
+                showView('auth-view');
+                if(ui.loginForm) ui.loginForm.style.display = 'block';
+                if(ui.registerForm) ui.registerForm.style.display = 'none';
+            }
+        });
+        
+        ui.loginBtn.addEventListener('click', handleLogin);
+        ui.registerBtn.addEventListener('click', handleRegister);
+        ui.logoutBtn.addEventListener('click', handleLogout);
+        ui.showRegisterBtn.addEventListener('click', () => {
+            ui.loginForm.style.display = 'none';
+            ui.registerForm.style.display = 'block';
+        });
+        ui.showLoginBtn.addEventListener('click', () => {
+            ui.loginForm.style.display = 'block';
+            ui.registerForm.style.display = 'none';
+        });
+
+        ui.genderSelect.addEventListener('change', () => {
+            if (ui.genderSelect.value === 'กำหนดเอง') {
+                ui.customGenderContainer.classList.remove('hidden');
+            } else {
+                ui.customGenderContainer.classList.add('hidden');
+            }
+        });
+
+        ui.saveProfileBtn.addEventListener('click', async () => {
+            const nickname = ui.nicknameInput.value.trim();
+            const age = ui.ageInput.value;
+            let gender = ui.genderSelect.value;
+            let customGenderName = '';
+            let customGenderEmoji = '';
+
+            if (!nickname) { showAlert('กรุณาใส่ชื่อเล่น'); return; }
+            if (!age || isNaN(age) || age < 13) { showAlert('กรุณาใส่อายุที่ถูกต้อง (13 ปีขึ้นไป)'); return; }
+
+            if (gender === 'กำหนดเอง') {
+                customGenderName = ui.customGenderNameInput.value.trim();
+                customGenderEmoji = ui.customGenderEmojiInput.value.trim();
+                if (!customGenderName) { showAlert('กรุณาระบุชื่อเพศของคุณ'); return; }
+                if (!customGenderEmoji) { showAlert('กรุณาใส่อิโมจิประจำตัว'); return; }
+            }
+            
+            const profileData = { nickname, age, gender, customGenderName, customGenderEmoji };
+            await saveUserProfile(profileData);
+            
+            ui.myNicknameDisplay.textContent = nickname;
+            await loadCountries();
+            showView('country-setup-view');
+        });
+        
+        ui.saveCountriesBtn.addEventListener('click', async () => {
+            const countryData = { myCountry: settings.myCountry, partnerCountry: settings.partnerCountry };
+            await saveUserProfile(countryData);
+            await updatePresence('online', peer?.id, null);
+            showView('settings-view');
+        });
+
+        ui.alertModalClose.addEventListener('click', () => ui.alertModal.classList.add('hidden'));
+        ui.startBtn.addEventListener('click', startSearch);
+        ui.nextBtn.addEventListener('click', () => hangUp(true));
+        ui.stopBtn.addEventListener('click', () => hangUp(false));
+        ui.cancelSearchBtn.addEventListener('click', () => hangUp(false));
+        ui.chatPanel.sendBtn.addEventListener('click', sendChatMessage);
+        ui.chatPanel.input.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+        ui.fullscreenBtn.addEventListener('click', toggleFullscreen);
+        document.addEventListener('fullscreenchange', updateFullscreenIcon);
+        ui.editProfileBtn.addEventListener('click', () => showView('profile-modal'));
+        ui.editCountriesBtn.addEventListener('click', () => showView('country-setup-view'));
+        window.addEventListener('beforeunload', () => {
+            clearInterval(heartbeatInterval);
+            if(peer && !peer.destroyed) {
+                peer.destroy();
+            }
+        });
+
+    </script>
+</body>
+</html>
