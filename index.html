@@ -137,8 +137,14 @@
 
     <!-- Chat Screen -->
     <div id="chat-screen" class="screen hidden">
-        <div id="remote-video-container" class="video-container w-full h-1/2 lg:w-1/2 lg:h-full"><video id="remoteVideo" autoplay playsinline></video><div id="waiting-overlay" class="absolute inset-0 flex flex-col items-center justify-center text-white text-xl bg-black bg-opacity-50 z-20"><i class="fa-solid fa-satellite-dish text-5xl mb-4 animate-pulse"></i><p>กำลังค้นหาเพื่อนคุย...</p></div></div>
-        <div id="local-video-container" class="video-container w-full h-1/2 lg:w-1/2 lg:h-full"><video id="localVideo" autoplay playsinline muted></video></div>
+        <div id="remote-video-container" class="video-container w-full h-1/2 lg:w-1/2 lg:h-full">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div id="remote-user-info" class="hidden absolute top-3 left-3 bg-black/40 px-3 py-1 rounded-full text-sm text-white font-medium"></div>
+            <div id="waiting-overlay" class="absolute inset-0 flex flex-col items-center justify-center text-white text-xl bg-black bg-opacity-50 z-20"><i class="fa-solid fa-satellite-dish text-5xl mb-4 animate-pulse"></i><p>กำลังค้นหาเพื่อนคุย...</p></div>
+        </div>
+        <div id="local-video-container" class="video-container w-full h-1/2 lg:w-1/2 lg:h-full">
+            <video id="localVideo" autoplay playsinline muted></video>
+        </div>
         <div id="chat-controls" class="z-30"><button id="next-button" class="control-btn bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/50"><i class="fa-solid fa-forward-step"></i></button><button id="stop-button" class="control-btn bg-red-600 hover:bg-red-700 shadow-lg shadow-red-600/50"><i class="fa-solid fa-phone-slash"></i></button></div>
     </div>
     
@@ -161,6 +167,7 @@
             countryModal: document.getElementById('country-modal'), countryModalTitle: document.getElementById('country-modal-title'),
             closeCountryModalBtn: document.getElementById('close-country-modal-btn'), countrySearchInput: document.getElementById('country-search-input'),
             countryList: document.getElementById('country-list'),
+            remoteUserInfo: document.getElementById('remote-user-info'),
         };
 
         function showScreen(screen) { ui.homeScreen.classList.add('hidden'); ui.chatScreen.classList.add('hidden'); screen.classList.remove('hidden'); }
@@ -214,37 +221,28 @@
         function populateCountryList(filter = '') {
             ui.countryList.innerHTML = '';
             const lowerCaseFilter = filter.toLowerCase();
-
             const listFragment = document.createDocumentFragment();
 
             if (currentCountrySelector === 'partner') {
                 const worldwideItem = document.createElement('li');
                 worldwideItem.className = 'p-3 text-white rounded-lg hover:bg-white/10 cursor-pointer';
                 worldwideItem.textContent = 'ทั่วโลก';
-                worldwideItem.dataset.code = 'worldwide';
-                worldwideItem.dataset.name = 'ทั่วโลก';
-                worldwideItem.onclick = () => selectCountry('worldwide', 'ทั่วโลก');
-                listFragment.appendChild(worldwideItem);
+                worldwideItem.onclick = () => updateCountrySelection('worldwide', 'ทั่วโลก');
+                if ('ทั่วโลก'.includes(lowerCaseFilter)) listFragment.appendChild(worldwideItem);
             }
 
-            const filteredCountries = allCountries.filter(c => 
-                c.name.toLowerCase().includes(lowerCaseFilter) || 
-                c.enName.toLowerCase().includes(lowerCaseFilter)
-            );
-
+            const filteredCountries = allCountries.filter(c => c.name.toLowerCase().includes(lowerCaseFilter) || c.enName.toLowerCase().includes(lowerCaseFilter));
             filteredCountries.forEach(c => {
                 const item = document.createElement('li');
                 item.className = 'p-3 text-white rounded-lg hover:bg-white/10 cursor-pointer';
-                item.textContent = c.name;
-                item.dataset.code = c.alpha2;
-                item.dataset.name = c.name;
-                item.onclick = () => selectCountry(c.alpha2, c.name);
+                item.textContent = `${c.name} (${c.enName})`;
+                item.onclick = () => updateCountrySelection(c.alpha2, c.name);
                 listFragment.appendChild(item);
             });
             ui.countryList.appendChild(listFragment);
         }
 
-        function selectCountry(code, name) {
+        function updateCountrySelection(code, name) {
             const selectorBtn = currentCountrySelector === 'my' ? ui.myCountrySelector : ui.partnerCountrySelector;
             selectorBtn.textContent = name;
             selectorBtn.dataset.code = code;
@@ -257,14 +255,17 @@
             const partnerCountryCode = getCookie("partnerCountry") || 'worldwide';
             
             const myCountry = allCountries.find(c => c.alpha2 === myCountryCode) || allCountries.find(c => c.alpha2 === 'TH');
-            selectCountry.call({ currentCountrySelector: 'my' }, myCountry.alpha2, myCountry.name);
+            ui.myCountrySelector.textContent = myCountry.name;
+            ui.myCountrySelector.dataset.code = myCountry.alpha2;
 
             if (partnerCountryCode === 'worldwide') {
-                selectCountry.call({ currentCountrySelector: 'partner' }, 'worldwide', 'ทั่วโลก');
+                ui.partnerCountrySelector.textContent = 'ทั่วโลก';
+                ui.partnerCountrySelector.dataset.code = 'worldwide';
             } else {
                 const partnerCountry = allCountries.find(c => c.alpha2 === partnerCountryCode);
                 if (partnerCountry) {
-                    selectCountry.call({ currentCountrySelector: 'partner' }, partnerCountry.alpha2, partnerCountry.name);
+                    ui.partnerCountrySelector.textContent = partnerCountry.name;
+                    ui.partnerCountrySelector.dataset.code = partnerCountry.alpha2;
                 }
             }
         }
@@ -278,7 +279,7 @@
         async function initialize() {
             await fetchCountries();
             loadSettings();
-            ui.websiteUrl.textContent = window.location.hostname;
+            ui.websiteUrl.textContent = window.location.href; // Show full URL
             try {
                 ({ initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"));
                 ({ getAuth, signInAnonymously, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"));
@@ -309,7 +310,8 @@
             const q = query(collection(db, roomsCollectionPath), where('status', '==', 'waiting'));
             const querySnapshot = await getDocs(q);
             const availableRoom = querySnapshot.docs.find(doc => { const data = doc.data(); return data.callerId !== userId && (partnerCountry === 'worldwide' || data.country === partnerCountry); });
-            if (availableRoom) { await joinRoom(availableRoom.id, availableRoom.data()); } else { await createRoom(); }
+            if (availableRoom) { await joinRoom(availableRoom.id, availableRoom.data()); } 
+            else { await createRoom(); }
         }
         
         async function createRoom() {
@@ -330,7 +332,7 @@
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
             await updateDoc(roomRef, { answer: { type: answer.type, sdp: answer.sdp }, calleeId: userId, calleeName: ui.userNameInput.value, status: 'connected' });
-            listenForIceCandidates(roomRef);
+            listenForAnswer(roomRef); // Re-use listener to get final connected state
         }
         
         function createPeerConnection() {
@@ -341,13 +343,33 @@
             return pc;
         }
         
-        function listenForAnswer(roomRef) { roomUnsubscribe = onSnapshot(roomRef, async (snapshot) => { const data = snapshot.data(); if (data && data.answer && peerConnection && !peerConnection.currentRemoteDescription) { await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); listenForIceCandidates(roomRef); } }); }
+        function listenForAnswer(roomRef) { 
+            roomUnsubscribe = onSnapshot(roomRef, async (snapshot) => { 
+                const data = snapshot.data(); 
+                if (!data) { return; } // Room deleted
+                
+                if (data.status === 'connected') {
+                    const partnerName = data.callerId === userId ? data.calleeName : data.callerName;
+                    ui.remoteUserInfo.textContent = `กำลังคุยกับ: ${partnerName || 'เพื่อนใหม่'}`;
+                    ui.remoteUserInfo.classList.remove('hidden');
+                }
+
+                if (data.answer && peerConnection && !peerConnection.currentRemoteDescription) { 
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); 
+                    listenForIceCandidates(roomRef); 
+                } 
+            }); 
+        }
+
         function listenForIceCandidates(roomRef) { candidatesUnsubscribe = onSnapshot(collection(db, roomsCollectionPath, currentRoomId, 'candidates'), (snapshot) => { snapshot.docChanges().forEach(async (change) => { if (change.type === 'added' && peerConnection.remoteDescription) { await peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); } }); }); }
         
         async function hangUp(isAbrupt = false) {
              if (roomUnsubscribe) roomUnsubscribe(); if (candidatesUnsubscribe) candidatesUnsubscribe();
              if (peerConnection) { peerConnection.close(); peerConnection = null; }
              if (currentRoomId) { await deleteDoc(doc(db, roomsCollectionPath, currentRoomId)).catch(console.error); currentRoomId = null; }
+             
+             ui.remoteUserInfo.classList.add('hidden'); // Hide partner name
+
              if (!isAbrupt) {
                 if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
                 ui.remoteVideo.srcObject = null; ui.previewVideo.srcObject = null;
@@ -359,7 +381,7 @@
         
         ui.stopBtn.onclick = () => hangUp(false);
         ui.nextBtn.onclick = async () => { await hangUp(true); await findOrCreateRoom(); };
-        ui.copyUrlBtn.onclick = () => { const urlToCopy = "https://" + ui.websiteUrl.textContent; navigator.clipboard.writeText(urlToCopy).then(() => { ui.copyUrlBtn.textContent = "คัดลอกแล้ว!"; setTimeout(() => { ui.copyUrlBtn.textContent = "คัดลอก"; }, 2000); }).catch(err => { console.error('Could not copy text: ', err); }); };
+        ui.copyUrlBtn.onclick = () => { const urlToCopy = ui.websiteUrl.textContent; navigator.clipboard.writeText(urlToCopy).then(() => { ui.copyUrlBtn.textContent = "คัดลอกแล้ว!"; setTimeout(() => { ui.copyUrlBtn.textContent = "คัดลอก"; }, 2000); }).catch(err => { console.error('Could not copy text: ', err); }); };
         ui.myCountrySelector.onclick = () => openCountryModal('my');
         ui.partnerCountrySelector.onclick = () => openCountryModal('partner');
         ui.closeCountryModalBtn.onclick = closeCountryModal;
