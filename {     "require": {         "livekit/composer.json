@@ -1,5 +1,0 @@
-{
-    "require": {
-        "livekit/server-sdk-php": "^1.0"
-    }
-}
