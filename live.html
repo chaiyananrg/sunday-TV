@@ -2,962 +2,445 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sunday Live - ค่ำคืนแห่งดวงดาว</title>
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- SweetAlert2 CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- Google Fonts: Poppins & Noto Sans Thai -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunday Live - The Ultimate Experience</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* --- Base Theme & Custom Styles --- */
         :root {
-            --primary-purple: #9333ea; /* purple-600 */
-            --glow-purple: #a855f7;    /* purple-500 */
-            --dark-bg: #111827;       /* gray-900 */
-            --glass-bg: rgba(23, 23, 37, 0.4);
-            --border-color: rgba(147, 51, 234, 0.3);
-            --text-light: #f3f4f6;    /* gray-100 */
-            --text-dark: #9ca3af;     /* gray-400 */
+            --sunrise-start: #ffc371; --sunrise-end: #ff5f6d;
+            --sky-blue: #89f7fe; --sky-end: #66a6ff;
+            --text-dark: #2c3e50; --text-light: #fdfdfd;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --radius: 16px;
         }
-
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-        }
-
         body {
-            /* Use Noto Sans Thai as the primary font */
-            font-family: 'Noto Sans Thai', 'Poppins', sans-serif;
-            background-color: var(--dark-bg);
-            color: var(--text-light);
-            background-image: radial-gradient(circle at 1% 1%, var(--primary-purple) 1px, transparent 1px),
-                              radial-gradient(circle at 15% 30%, var(--glow-purple) 1px, transparent 1px);
-            background-size: 30px 30px;
+            font-family: 'Kanit', sans-serif; margin: 0;
+            background: linear-gradient(135deg, var(--sky-blue), var(--sky-end));
+            color: var(--text-dark); overflow: hidden;
         }
-
-        /* --- Glassmorphism Effect --- */
-        .glassmorphism {
-            background: var(--glass-bg);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        /* --- Glow Effect --- */
-        .glow-effect {
-            box-shadow: 0 0 5px var(--glow-purple), 0 0 10px var(--glow-purple);
-            transition: all 0.3s ease-in-out;
-        }
-        .glow-effect:hover {
-            box-shadow: 0 0 10px var(--glow-purple), 0 0 25px var(--glow-purple), 0 0 40px var(--glow-purple);
-        }
-
-        /* --- TikTok-style Scroll Snap --- */
-        .stream-container {
-            scroll-snap-type: y mandatory;
-            overflow-y: scroll;
-            height: 100%;
-            width: 100%;
-        }
-        .stream-container::-webkit-scrollbar { display: none; }
-        .stream-item {
-            scroll-snap-align: start;
-            flex-shrink: 0;
-        }
-
-        /* --- Custom Animations --- */
-        @keyframes superGiftEntry {
-            0% { transform: scale(0.3) rotate(-45deg); opacity: 0; }
-            60% { transform: scale(1.2) rotate(10deg); opacity: 1; }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-        @keyframes superGiftShine {
-            0%, 100% { text-shadow: 0 0 20px #FFD700, 0 0 40px #FF8C00; }
-            50% { text-shadow: 0 0 30px #FFD700, 0 0 60px #FF4500; }
-        }
-        .super-gift-animate {
-            animation: superGiftEntry 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        .super-gift-shine {
-            animation: superGiftShine 1.5s infinite alternate;
-        }
+        .page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; padding: 24px; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s ease; }
+        .page.active { opacity: 1; visibility: visible; z-index: 10; }
+        #login-page { display: flex; justify-content: center; align-items: center; }
+        .login-box { background: var(--card-bg); backdrop-filter: blur(10px); padding: 40px 50px; border-radius: var(--radius); box-shadow: var(--shadow); text-align: center; animation: fadeIn 0.8s ease-out; }
+        .login-box h1 { font-size: 3rem; font-weight: 700; background: -webkit-linear-gradient(45deg, var(--sunrise-end), #66a6ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+        #displayNameInput { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; margin-top: 20px; font-size: 1rem; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border: none; border-radius: 12px; cursor: pointer; font-size: 1rem; font-weight: 500; transition: all 0.3s ease; margin-top: 20px; }
+        .btn-primary { background: linear-gradient(45deg, var(--sunrise-end), var(--sunrise-start)); color: var(--text-light); }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .btn-success { background: linear-gradient(45deg, #2ed573, #1e90ff); color: white; }
         
-        /* --- Custom Scrollbar for Chat --- */
-        .chat-box::-webkit-scrollbar { width: 4px; }
-        .chat-box::-webkit-scrollbar-track { background: transparent; }
-        .chat-box::-webkit-scrollbar-thumb { background: var(--primary-purple); border-radius: 20px; }
-
-        /* --- Hide number input arrows --- */
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
-        }
-        input[type=number] { -moz-appearance: textfield; }
+        #home-page header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        #home-page .header-card { background: var(--card-bg); backdrop-filter: blur(5px); padding: 12px 20px; border-radius: var(--radius); box-shadow: var(--shadow); }
+        #coin-area input { padding: 8px; border-radius: 8px; border: 1px solid #ccc; width: 80px; }
+        .live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; margin-top: 30px; }
+        .live-card { background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .live-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.15); }
+        .live-card .thumbnail { width: 100%; height: 180px; background: linear-gradient(45deg, #eee, #ddd); display: flex; justify-content: center; align-items: center; }
+        .live-card-info { padding: 15px; }
+        .live-card-info h4 { margin: 0 0 5px 0; }
+        
+        #live-room-page { background: #111; padding: 0; top: 100%; transition: top 0.5s cubic-bezier(0.77, 0, 0.175, 1); }
+        #live-room-page.active { top: 0; z-index: 20; }
+        .live-room-header { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; z-index: 30; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(0,0,0,0.5), transparent); }
+        .live-room-header h3 { color: white; margin: 0; display: flex; align-items: center; gap: 10px; }
+        .live-badge { background-color: #ff4757; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.9rem; font-weight: 500; animation: pulse 1.5s infinite; }
+        .video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-container video { width: 100%; height: 100%; object-fit: cover; }
+        .live-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; z-index: 30; display: flex; flex-direction: column; gap: 10px; background: linear-gradient(0deg, rgba(0,0,0,0.5), transparent); }
+        .chat-box { color: white; height: 200px; overflow-y: auto; text-shadow: 1px 1px 2px black; }
+        .chat-message { margin-bottom: 8px; }
+        .chat-message span { font-weight: bold; color: var(--sunrise-start); }
+        .chat-input-area { display: flex; gap: 10px; }
+        #chat-input { flex-grow: 1; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; padding: 10px; color: white; outline: none; }
+        .main-controls { display: flex; justify-content: space-between; align-items: center; }
+        .gift-shop { display: flex; gap: 15px; }
+        .icon-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: background 0.3s; color: white; flex-shrink: 0; }
+        .icon-btn:hover { background: rgba(255,255,255,0.4); }
+        
+        #streamer-controls { display: none; gap: 15px; }
+        #streamer-controls.active { display: flex; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); } }
     </style>
 </head>
-<body class="h-full w-full">
+<body>
 
-    <!-- ========== Loader ========== -->
-    <div id="loader" class="fixed inset-0 bg-black bg-opacity-80 z-[200] flex-col items-center justify-center hidden">
-        <div class="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-[var(--primary-purple)]"></div>
-        <p class="mt-4 text-lg font-semibold tracking-widest text-white">กำลังโหลด</p>
-    </div>
-
-    <!-- ========== Super Gift Animation Overlay ========== -->
-    <div id="super-gift-animation" class="hidden fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/80 p-4">
-        <div class="super-gift-animate text-center">
-            <h2 class="text-5xl md:text-7xl font-bold text-yellow-300 drop-shadow-[0_5px_15px_rgba(253,224,71,0.8)]">ของขวัญสุดพิเศษ!</h2>
-            <div id="super-gift-icon" class="my-8 text-9xl super-gift-shine"></div>
-            <p id="super-gift-message" class="text-xl md:text-3xl font-semibold text-white"></p>
+    <div id="login-page" class="page active">
+        <div class="login-box">
+            <h1>Sunday Live</h1>
+            <p>ไลฟ์วันสบายๆ สไตล์คุณ</p>
+            <input type="text" id="displayNameInput" placeholder="กรอกชื่อของคุณ...">
+            <button id="login-btn" class="btn btn-primary"><i data-lucide="log-in"></i><span>เข้าสู่ระบบ</span></button>
         </div>
     </div>
 
-    <!-- ====================================================================== -->
-    <!-- ========================= SCREENS CONTAINER ========================== -->
-    <!-- ====================================================================== -->
-
-    <!-- ========== Authentication Screen ========== -->
-    <div id="auth-screen" class="h-full w-full flex items-center justify-center p-4">
-        <div class="w-full max-w-md p-6 sm:p-8 space-y-6 rounded-2xl glassmorphism">
-            <div class="text-center">
-                <h1 class="text-4xl font-bold text-white">Sunday <span class="text-[var(--primary-purple)]">Live</span></h1>
-                <p class="text-gray-400 mt-2">เข้าร่วมค่ำคืนแห่งดวงดาว</p>
+    <div id="home-page" class="page">
+        <header>
+            <div id="userInfo" class="header-card"><h3>สวัสดี, <span id="usernameDisplay"></span>!</h3></div>
+            <div id="coin-area" class="header-card">
+                <i data-lucide="coins"></i>
+                <span>ยอดเหรียญ: <span id="coinBalance">0</span></span>
+                <input type="number" id="rechargeAmount" placeholder="จำนวนเงิน">
+                <button id="recharge-btn" class="btn">เติม</button>
             </div>
-            
-            <!-- Login Form -->
-            <form id="login-form" class="space-y-4">
-                <h2 class="text-2xl font-semibold text-center text-white">เข้าสู่ระบบ</h2>
-                <div>
-                    <input id="login-email" type="email" placeholder="อีเมล" required class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-[var(--primary-purple)] focus:border-[var(--primary-purple)]">
-                </div>
-                <div>
-                    <input id="login-password" type="password" placeholder="รหัสผ่าน" required class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-[var(--primary-purple)] focus:border-[var(--primary-purple)]">
-                </div>
-                <button type="submit" class="w-full py-2 text-lg font-bold text-white bg-[var(--primary-purple)] rounded-lg glow-effect">เข้าสู่ระบบ</button>
-                <p class="text-center text-sm text-gray-400">
-                    ไม่มีบัญชี? <a href="#" id="show-register-link" class="font-medium text-[var(--primary-purple)] hover:underline">สมัครเลย</a>
-                </p>
-                 <p class="text-center text-sm text-gray-400">
-                    เป็นผู้ดูแล? <a href="#" id="show-admin-login-link" class="font-medium text-yellow-400 hover:underline">ล็อกอินแอดมิน</a>
-                </p>
-            </form>
-
-            <!-- Register Form -->
-            <form id="register-form" class="hidden space-y-4">
-                <h2 class="text-2xl font-semibold text-center text-white">สมัครสมาชิก</h2>
-                <div><input id="register-fullname" type="text" placeholder="ชื่อ-นามสกุล" required class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-[var(--primary-purple)] focus:border-[var(--primary-purple)]"></div>
-                <div><input id="register-nickname" type="text" placeholder="ชื่อเล่น" required class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-[var(--primary-purple)] focus:border-[var(--primary-purple)]"></div>
-                <div><input id="register-email" type="email" placeholder="อีเมล" required class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-[var(--primary-purple)] focus:border-[var(--primary-purple)]"></div>
-                <div><input id="register-password" type="password" placeholder="รหัสผ่าน" required class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-[var(--primary-purple)] focus:border-[var(--primary-purple)]"></div>
-                <button type="submit" class="w-full py-2 text-lg font-bold text-white bg-[var(--primary-purple)] rounded-lg glow-effect">สร้างบัญชี</button>
-                <p class="text-center text-sm text-gray-400">
-                    มีบัญชีแล้ว? <a href="#" id="show-login-link" class="font-medium text-[var(--primary-purple)] hover:underline">เข้าสู่ระบบที่นี่</a>
-                </p>
-            </form>
+        </header>
+        <div class="home-actions">
+            <button id="start-live-btn" class="btn btn-success"><i data-lucide="video"></i><span>เริ่มไลฟ์สด</span></button>
+        </div>
+        <h2 style="margin-top: 30px;">ช่องที่กำลังไลฟ์สด</h2>
+        <div class="live-grid" id="live-grid">
+             <div id="no-live-streams" style="text-align: center; grid-column: 1 / -1; padding: 20px;">ยังไม่มีใครไลฟ์สดเลย... คุณเป็นคนแรกสิ!</div>
         </div>
     </div>
 
-    <!-- ========== Main App Screen (Live Streams) ========== -->
-    <div id="main-app" class="hidden h-full w-full relative">
-        <div id="stream-container" class="stream-container">
-            <!-- Streams will be injected here by JavaScript -->
-            <div class="h-full w-full flex items-center justify-center text-center">
-                <p class="text-2xl">ตอนนี้ไม่มีไลฟ์สดเลย<br>ลองเริ่มไลฟ์ดูสิ?</p>
+    <div id="live-room-page" class="page">
+        <div class="live-room-header">
+            <h3 id="live-room-title"></h3>
+            <button id="leave-room-btn" class="icon-btn"><i data-lucide="x"></i></button>
+        </div>
+        <div class="video-container" id="video-container">[ กำลังโหลดวิดีโอ... ]</div>
+        <div class="live-overlay">
+            <div class="chat-box" id="chat-box"></div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="พิมพ์ข้อความ...">
+                <button id="send-chat-btn" class="icon-btn"><i data-lucide="send"></i></button>
+            </div>
+            <div class="main-controls">
+                <div id="streamer-controls">
+                    <button id="mic-btn" class="icon-btn"><i id="mic-icon" data-lucide="mic"></i></button>
+                    <button id="cam-btn" class="icon-btn"><i id="cam-icon" data-lucide="video"></i></button>
+                </div>
+                <div class="gift-shop">
+                    <button class="icon-btn" data-gift="heart" data-cost="1"><i data-lucide="heart"></i></button>
+                    <button class="icon-btn" data-gift="sun" data-cost="99"><i data-lucide="sun"></i></button>
+                    <button class="icon-btn" data-gift="rocket" data-cost="500"><i data-lucide="rocket"></i></button>
+                </div>
             </div>
         </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const App = (() => {
+        // --- State & Config ---
+        const LIVEKIT_URL = 'wss://sunday-group-cy6t1e76.livekit.cloud';
+        const LIVEKIT_API_KEY = 'APIG6ZjPHKfdoPq';
+        const LIVEKIT_API_SECRET = 'b6SMZCXSjgE2ee0XfkZi870J4c8Gt2cdqViAlKff2gPE';
+        const PROFANITY_LIST = ['เหี้ย', 'สัส', 'ควย', 'หี', 'เย็ด', 'ไอ้สัส', 'อีดอก'];
         
-        <!-- Bottom Navigation -->
-        <div class="absolute bottom-0 left-0 right-0 p-4 flex justify-around items-center glassmorphism border-t-2 border-[var(--border-color)]">
-            <button id="home-btn" class="text-2xl text-gray-300 hover:text-white"><i class="fas fa-home"></i></button>
-            <button id="go-live-btn" class="text-2xl text-white bg-[var(--primary-purple)] w-16 h-16 rounded-full flex items-center justify-center glow-effect text-4xl shadow-lg"><i class="fas fa-video"></i></button>
-            <button id="logout-btn" class="text-2xl text-gray-300 hover:text-white"><i class="fas fa-sign-out-alt"></i></button>
-        </div>
-    </div>
+        let currentUsername = '';
+        let coinBalance = 100;
+        let currentRoom = null;
+        let liveRooms = [];
+        let currentLiveIndex = -1;
+        let isSwitching = false;
+        let streamerWarnings = 0;
+        let isBlocked = false;
+        let blockTimeoutId = null;
+        const textEncoder = new TextEncoder();
+        const textDecoder = new TextDecoder();
+        
+        // --- DOM Elements ---
+        const pages = document.querySelectorAll('.page');
+        const usernameDisplay = document.getElementById('usernameDisplay');
+        const coinBalanceDisplay = document.getElementById('coinBalance');
+        const displayNameInput = document.getElementById('displayNameInput');
+        const chatBox = document.getElementById('chat-box');
+        const liveRoomTitle = document.getElementById('live-room-title');
+        const videoContainer = document.getElementById('video-container');
+        const liveGrid = document.getElementById('live-grid');
+        const streamerControls = document.getElementById('streamer-controls');
+        const chatInput = document.getElementById('chat-input');
 
-    <!-- ========== Go Live Modal ========== -->
-    <div id="go-live-modal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-        <div class="w-full max-w-sm p-6 space-y-4 rounded-2xl glassmorphism">
-            <h2 class="text-2xl font-bold text-center">เริ่มต้นไลฟ์สตรีมของคุณ</h2>
-            <input id="stream-title-input" type="text" placeholder="ใส่หัวข้อไลฟ์ของคุณ..." class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-[var(--primary-purple)] focus:border-[var(--primary-purple)]">
-            <div class="flex gap-4">
-                <button id="cancel-live-btn" class="w-full py-2 font-semibold bg-gray-600 rounded-lg hover:bg-gray-500">ยกเลิก</button>
-                <button id="start-live-btn" class="w-full py-2 font-bold text-white bg-[var(--primary-purple)] rounded-lg glow-effect">เริ่มไลฟ์!</button>
-            </div>
-        </div>
-    </div>
+        function init() {
+            if (typeof lucide === 'undefined' || typeof livekit === 'undefined') {
+                console.error("Essential libraries (Lucide or LiveKit) are not loaded.");
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดไลบรารี่ที่จำเป็นได้ กรุณาลองรีเฟรชหน้าเว็บ', 'error');
+                return;
+            }
+            lucide.createIcons();
+            attachEventListeners();
+            updateCoinDisplay();
+        }
 
-    <!-- ========== Gift Modal ========== -->
-    <div id="gift-modal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-end justify-center">
-        <div class="w-full max-w-md p-4 space-y-4 rounded-t-2xl glassmorphism">
-            <div class="flex justify-between items-center">
-                <h2 class="text-xl font-bold">ส่งของขวัญ</h2>
-                <button id="close-gift-modal-btn" class="text-2xl"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="gift-options" class="grid grid-cols-3 sm:grid-cols-4 gap-4 text-center">
-                <!-- Gift items will be injected here -->
-            </div>
-            <div class="text-center font-semibold">เหรียญของฉัน: <span id="user-coins">0</span> <i class="fas fa-coins text-yellow-400"></i></div>
-        </div>
-    </div>
-    
-    <!-- ========== Admin Panel Screen ========== -->
-    <div id="admin-panel" class="hidden h-full w-full flex items-center justify-center p-4">
-        <!-- Admin Login -->
-        <div id="admin-login-view" class="w-full max-w-md">
-            <div class="p-8 space-y-6 rounded-2xl glassmorphism">
-                <div class="text-center">
-                    <h1 class="text-4xl font-bold text-yellow-400">แผงควบคุมผู้ดูแล</h1>
-                    <p class="text-gray-400 mt-2">การเข้าถึงถูกจำกัด</p>
-                </div>
-                <form id="admin-login-form" class="space-y-4">
-                    <input id="admin-username" type="text" placeholder="ชื่อผู้ใช้แอดมิน" required class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-yellow-500 focus:border-yellow-500">
-                    <input id="admin-password" type="password" placeholder="รหัสผ่านแอดมิน" required class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-yellow-500 focus:border-yellow-500">
-                    <button type="submit" class="w-full py-2 text-lg font-bold text-gray-900 bg-yellow-400 rounded-lg hover:bg-yellow-300">เข้าสู่ระบบ</button>
-                    <p class="text-center text-sm"><a href="#" id="back-to-user-login" class="text-[var(--primary-purple)] hover:underline">กลับไปหน้าล็อกอินผู้ใช้</a></p>
-                </form>
-            </div>
-        </div>
-
-        <!-- Admin Dashboard -->
-        <div id="admin-dashboard-view" class="hidden w-full h-full p-4 flex flex-col">
-            <div class="flex-shrink-0 flex justify-between items-center mb-4">
-                <h1 class="text-3xl font-bold text-yellow-400">แดชบอร์ดผู้ดูแล</h1>
-                <button id="admin-logout-btn" class="px-4 py-2 font-bold text-gray-900 bg-yellow-400 rounded-lg hover:bg-yellow-300">ออกจากระบบ</button>
-            </div>
-            <div class="flex-grow flex flex-col overflow-hidden">
-                <!-- Tabs -->
-                <div class="flex-shrink-0 border-b border-gray-700">
-                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                        <button id="tab-all-users" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg border-[var(--primary-purple)] text-[var(--primary-purple)]">ผู้ใช้ทั้งหมด</button>
-                        <button id="tab-banned-users" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500">ผู้ใช้ที่ถูกแบน</button>
-                    </nav>
-                </div>
-                <!-- Content -->
-                <div class="flex-grow overflow-y-auto">
-                    <div id="content-all-users" class="mt-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="all-users-list"></div>
-                    </div>
-                    <div id="content-banned-users" class="hidden mt-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="banned-users-list"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ====================================================================== -->
-    <!-- ========================= JAVASCRIPT LOGIC =========================== -->
-    <!-- ====================================================================== -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-
-            // --- API Configuration ---
-            const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbz4kRTx8yV-JAFdu6DHM2etgeURCjkcFgdk6NXyg-k8zkLBrVWTYPXhNLfUNatnFOS96g/exec';
-
-            // --- DOM Elements ---
-            const loader = document.getElementById('loader');
-            const screens = {
-                auth: document.getElementById('auth-screen'),
-                main: document.getElementById('main-app'),
-                admin: document.getElementById('admin-panel'),
-            };
-            const authForms = {
-                login: document.getElementById('login-form'),
-                register: document.getElementById('register-form'),
-            };
-            const adminViews = {
-                login: document.getElementById('admin-login-view'),
-                dashboard: document.getElementById('admin-dashboard-view'),
-            };
-            const streamContainer = document.getElementById('stream-container');
-            const goLiveModal = document.getElementById('go-live-modal');
-            const giftModal = document.getElementById('gift-modal');
-            
-            // --- State Variables ---
-            let currentUser = null;
-            let currentAdmin = null;
-            let activeStreams = [];
-            let chatPollInterval = null;
-            let autoBanTimeout = null; // For simulating auto-ban
-            let currentStreamIndex = 0;
-
-            // --- Gift Definitions (with Thai names) ---
-            const gifts = [
-                { id: 'rose', name: 'กุหลาบ', icon: '🌹', price: 10 },
-                { id: 'diamond', name: 'เพชร', icon: '💎', price: 50 },
-                { id: 'heart', name: 'หัวใจ', icon: '❤️', price: 100 },
-                { id: 'rocket', name: 'จรวด', icon: '🚀', price: 500 },
-                { id: 'crown', name: 'มงกุฎ', icon: '👑', price: 1000 },
-                { id: 'super_gift', name: 'ของขวัญพิเศษ', icon: '🎁', price: 5000, isSuper: true },
-            ];
-
-            // =================================================
-            // --- HELPER FUNCTIONS ---
-            // =================================================
-
-            const showLoader = () => loader.classList.remove('hidden');
-            const hideLoader = () => loader.classList.add('hidden');
-
-            const showAlert = (icon, title, text) => {
-                SweetAlert2.fire({
-                    icon: icon,
-                    title: title,
-                    text: text,
-                    background: '#1f2937', // gray-800
-                    color: '#f3f4f6', // gray-100
-                    confirmButtonColor: 'var(--primary-purple)',
-                    confirmButtonText: 'ตกลง'
+        function attachEventListeners() {
+            document.getElementById('login-btn').addEventListener('click', login);
+            displayNameInput.addEventListener('keyup', e => { if (e.key === 'Enter') login(); });
+            document.getElementById('recharge-btn').addEventListener('click', rechargeCoins);
+            document.getElementById('start-live-btn').addEventListener('click', startMyOwnLive);
+            document.getElementById('leave-room-btn').addEventListener('click', () => leaveLiveRoom(true));
+            document.getElementById('live-room-page').addEventListener('wheel', handleLiveScroll);
+            document.getElementById('mic-btn').addEventListener('click', toggleMic);
+            document.getElementById('cam-btn').addEventListener('click', toggleCam);
+            document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
+            chatInput.addEventListener('keyup', e => { if (e.key === 'Enter') sendChatMessage(); });
+            document.querySelectorAll('.gift-shop .icon-btn[data-gift]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const gift = btn.dataset.gift;
+                    const cost = parseInt(btn.dataset.cost, 10);
+                    sendGift(gift, cost);
                 });
-            };
+            });
+        }
 
-            const showScreen = (screenName) => {
-                Object.values(screens).forEach(s => s.classList.add('hidden'));
-                if (screens[screenName]) {
-                    screens[screenName].style.display = 'flex'; // Use flex for centering
-                    screens[screenName].classList.remove('hidden');
-                }
-            };
+        function showPage(pageId) {
+            pages.forEach(page => page.classList.remove('active'));
+            const targetPage = document.getElementById(pageId);
+            if(targetPage) targetPage.classList.add('active');
+        }
 
-            // --- Core API request function (Synced with API Docs) ---
-            async function apiRequest(action, params = {}, method = 'GET') {
-                const url = new URL(API_BASE_URL);
-                url.searchParams.append('action', action);
+        function updateCoinDisplay() {
+            if (coinBalanceDisplay) coinBalanceDisplay.textContent = coinBalance;
+        }
 
-                const fetchOptions = {
-                    method: method.toUpperCase(),
-                    mode: 'cors', 
-                    redirect: 'follow',
+        function login() {
+            const name = displayNameInput.value.trim();
+            if (!name) { Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: 'กรุณากรอกชื่อด้วยครับ' }); return; }
+            currentUsername = name;
+            usernameDisplay.textContent = currentUsername;
+            updateCoinDisplay();
+            Swal.fire({ icon: 'success', title: `ยินดีต้อนรับ, ${name}!`, timer: 1500, showConfirmButton: false })
+               .then(() => showPage('home-page'));
+        }
+
+        function rechargeCoins() {
+            const amountInput = document.getElementById('rechargeAmount');
+            const amount = parseInt(amountInput.value);
+            if (isNaN(amount) || amount <= 0) {
+                Swal.fire({ icon: 'warning', title: 'ผิดพลาด', text: 'กรุณากรอกจำนวนเงินที่ถูกต้อง' });
+                return;
+            }
+            coinBalance += amount;
+            updateCoinDisplay();
+            Swal.fire({ icon: 'success', title: 'เติมเงินสำเร็จ!', text: `คุณได้รับ ${amount} เหรียญ`, timer: 2000, showConfirmButton: false });
+            amountInput.value = '';
+        }
+
+        function containsProfanity(text) {
+            return PROFANITY_LIST.some(word => text.toLowerCase().includes(word));
+        }
+
+        async function generateToken(roomName, participantName) {
+            // FIX: Access livekit from window object
+            const { AccessToken } = window.livekit;
+            const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, { identity: participantName });
+            at.addGrant({ roomJoin: true, room: roomName, canPublish: true, canSubscribe: true, canPublishData: true });
+            return at.toJwt();
+        }
+
+        async function connectToLiveKit(roomName, isStreamer) {
+            if (currentRoom) await leaveLiveRoom(false);
+            
+            // FIX: Access livekit from window object
+            const { Room, RoomEvent } = window.livekit;
+            const token = await generateToken(roomName, currentUsername);
+            currentRoom = new Room();
+
+            Swal.fire({ title: 'กำลังเชื่อมต่อ...', text: `กำลังเข้าสู่ห้อง ${roomName}`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            try {
+                await currentRoom.connect(LIVEKIT_URL, token);
+                Swal.close();
+                liveRoomTitle.innerHTML = `${roomName} <span class="live-badge">LIVE</span>`;
+                lucide.createIcons();
+                document.getElementById('live-room-page').classList.add('active');
+                streamerControls.classList.toggle('active', isStreamer);
+                chatBox.innerHTML = '';
+
+                const handleTrack = (track, participant) => {
+                    if (track.kind === 'video') {
+                        videoContainer.innerHTML = '';
+                        const videoElement = track.attach();
+                        videoContainer.appendChild(videoElement);
+                    }
                 };
 
-                if (fetchOptions.method === 'POST') {
-                    const body = new URLSearchParams();
-                    for (const key in params) {
-                        body.append(key, params[key]);
-                    }
-                    fetchOptions.body = body;
-                } else { // GET
-                    for (const key in params) {
-                        url.searchParams.append(key, params[key]);
-                    }
+                if (isStreamer) {
+                    streamerWarnings = 0;
+                    await currentRoom.localParticipant.enableCameraAndMicrophone();
                 }
-
-                try {
-                    const response = await fetch(url.toString(), fetchOptions);
-                    if (!response.ok) {
-                        throw new Error(`เกิดข้อผิดพลาด HTTP! สถานะ: ${response.status}`);
-                    }
-                    const result = await response.json();
-                    if (result.status === 'error') {
-                        throw new Error(result.message);
-                    }
-                    return result;
-                } catch (error) {
-                    console.error(`ข้อผิดพลาดจาก API (${action}):`, error);
-                    showAlert('error', 'ข้อผิดพลาดจาก API', error.message);
-                    throw error;
-                }
-            }
-
-            // =================================================
-            // --- INITIALIZATION ---
-            // =================================================
-
-            function initialize() {
-                const userData = sessionStorage.getItem('sundayLiveUser');
-                const adminData = sessionStorage.getItem('sundayLiveAdmin');
-
-                if (adminData) {
-                    currentAdmin = JSON.parse(adminData);
-                    showAdminDashboard();
-                } else if (userData) {
-                    currentUser = JSON.parse(userData);
-                    showMainApp();
-                } else {
-                    showScreen('auth');
-                }
-                setupEventListeners();
-            }
-
-            // =================================================
-            // --- AUTHENTICATION & USER FLOW ---
-            // =================================================
-
-            function setupAuthEventListeners() {
-                // Toggle forms
-                document.getElementById('show-register-link').addEventListener('click', (e) => {
-                    e.preventDefault();
-                    authForms.login.classList.add('hidden');
-                    authForms.register.classList.remove('hidden');
-                });
-                document.getElementById('show-login-link').addEventListener('click', (e) => {
-                    e.preventDefault();
-                    authForms.register.classList.add('hidden');
-                    authForms.login.classList.remove('hidden');
+                
+                currentRoom.localParticipant.tracks.forEach(pub => {
+                    if (pub.track) handleTrack(pub.track, currentRoom.localParticipant);
                 });
 
-                // Login
-                authForms.login.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    showLoader();
-                    const email = document.getElementById('login-email').value;
-                    const password = document.getElementById('login-password').value;
-                    try {
-                        const result = await apiRequest('loginUser', { email, password }, 'GET');
-                        currentUser = result.data;
-                        sessionStorage.setItem('sundayLiveUser', JSON.stringify(currentUser));
-                        showMainApp();
-                    } catch (error) {
-                        // Error handled by apiRequest
-                    } finally {
-                        hideLoader();
-                    }
-                });
-
-                // Register
-                authForms.register.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    showLoader();
-                    const params = {
-                        fullName: document.getElementById('register-fullname').value,
-                        nickname: document.getElementById('register-nickname').value,
-                        email: document.getElementById('register-email').value,
-                        password: document.getElementById('register-password').value,
-                    };
-                    try {
-                        await apiRequest('registerUser', params, 'GET');
-                        showAlert('success', 'สมัครสมาชิกสำเร็จ!', 'คุณสามารถเข้าสู่ระบบด้วยข้อมูลของคุณได้แล้ว');
-                        authForms.register.reset();
-                        authForms.register.classList.add('hidden');
-                        authForms.login.classList.remove('hidden');
-                    } catch (error) {
-                        // Error handled by apiRequest
-                    } finally {
-                        hideLoader();
-                    }
-                });
-            }
-            
-            function showMainApp() {
-                showScreen('main');
-                fetchAndRenderStreams();
-            }
-
-            function handleLogout() {
-                Swal.fire({
-                    title: 'คุณแน่ใจหรือไม่?',
-                    text: "คุณกำลังจะออกจากระบบ",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: 'var(--primary-purple)',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'ใช่, ออกจากระบบ!',
-                    cancelButtonText: 'ยกเลิก',
-                    background: '#1f2937',
-                    color: '#f3f4f6'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        sessionStorage.removeItem('sundayLiveUser');
-                        currentUser = null;
-                        if (chatPollInterval) clearInterval(chatPollInterval);
-                        if (autoBanTimeout) clearTimeout(autoBanTimeout);
-                        window.location.reload();
-                    }
-                });
-            }
-
-            // =================================================
-            // --- LIVE STREAMING ---
-            // =================================================
-            
-            async function fetchAndRenderStreams() {
-                showLoader();
-                try {
-                    const result = await apiRequest('getStreams');
-                    activeStreams = result.data;
-                    renderStreams();
-                } catch (error) {
-                    streamContainer.innerHTML = `<div class="h-full w-full flex items-center justify-center text-center p-4"><p class="text-xl text-red-400">ไม่สามารถโหลดสตรีมได้<br>${error.message}</p></div>`;
-                } finally {
-                    hideLoader();
-                }
-            }
-
-            function renderStreams() {
-                streamContainer.innerHTML = ''; // Clear existing streams
-                if (!activeStreams || activeStreams.length === 0) {
-                    streamContainer.innerHTML = `<div class="h-full w-full flex items-center justify-center text-center p-4"><p class="text-2xl">ตอนนี้ไม่มีไลฟ์สดเลย<br>ลองเริ่มไลฟ์ดูสิ?</p></div>`;
-                    return;
-                }
-
-                activeStreams.forEach((stream, index) => {
-                    const isMyStream = stream.streamerId === currentUser.userId;
-                    const streamElement = document.createElement('div');
-                    streamElement.className = 'stream-item h-full w-full relative flex flex-col justify-between';
-                    streamElement.dataset.streamId = stream.streamerId;
-                    streamElement.dataset.streamerId = stream.streamerId;
-                    streamElement.dataset.index = index;
-
-                    streamElement.innerHTML = `
-                        <!-- Mock Video Background -->
-                        <div class="absolute inset-0 bg-gray-800 z-0">
-                            <img src="https://picsum.photos/seed/${stream.streamerId}/800/1200" class="w-full h-full object-cover opacity-30 blur-sm">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30"></div>
-                        </div>
-
-                        <!-- Streamer Info (Top) -->
-                        <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-10">
-                            <div class="p-2 rounded-lg glassmorphism">
-                                <h2 class="font-bold text-lg">${stream.streamerNickname}</h2>
-                                <p class="text-sm text-gray-300">${stream.title}</p>
-                            </div>
-                            ${isMyStream ? `<button class="stop-live-btn bg-red-600 px-4 py-2 rounded-lg font-bold glow-effect">หยุดไลฟ์</button>` : ''}
-                        </div>
-
-                        <!-- Chat & Interaction (Bottom) -->
-                        <div class="relative z-10 p-4 space-y-2 flex flex-col">
-                            <div class="chat-box h-40 overflow-y-auto pr-2 space-y-2">
-                                <!-- Chat messages will be injected here -->
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <input type="text" placeholder="พูดอะไรบางอย่าง..." class="chat-input flex-grow px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-full focus:ring-[var(--primary-purple)] focus:border-[var(--primary-purple)]">
-                                <button class="send-chat-btn text-xl text-white bg-[var(--primary-purple)] w-10 h-10 rounded-full flex items-center justify-center glow-effect"><i class="fas fa-paper-plane"></i></button>
-                                <button class="gift-btn text-xl text-white bg-yellow-500 w-10 h-10 rounded-full flex items-center justify-center glow-effect"><i class="fas fa-gift"></i></button>
-                            </div>
-                        </div>
-                    `;
-                    streamContainer.appendChild(streamElement);
-                });
-                
-                setupStreamInteractionListeners();
-                updateActiveStream();
-            }
-
-            function setupStreamInteractionListeners() {
-                document.querySelectorAll('.stop-live-btn').forEach(btn => btn.addEventListener('click', handleStopLive));
-                document.querySelectorAll('.send-chat-btn').forEach(btn => btn.addEventListener('click', handleSendChat));
-                document.querySelectorAll('.chat-input').forEach(input => input.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSendChat(e); }));
-                document.querySelectorAll('.gift-btn').forEach(btn => btn.addEventListener('click', handleOpenGiftModal));
-            }
-
-            function updateActiveStream() {
-                if (chatPollInterval) clearInterval(chatPollInterval);
-                const streamItem = document.querySelector(`.stream-item[data-index="${currentStreamIndex}"]`);
-                if (!streamItem) return;
-                
-                const streamId = streamItem.dataset.streamId;
-                const chatBox = streamItem.querySelector('.chat-box');
-                
-                const pollChat = async () => {
-                    try {
-                        const result = await apiRequest('getChats', { streamId });
-                        renderChat(chatBox, result.data);
-                    } catch (error) {
-                        console.error("การดึงข้อมูลแชทล้มเหลว:", error.message);
-                    }
-                };
-                
-                pollChat(); // Initial fetch
-                chatPollInterval = setInterval(pollChat, 5000);
-            }
-
-            function renderChat(chatBox, chats) {
-                if (!chatBox) return;
-                chatBox.innerHTML = chats.map(chat => {
-                    if (chat.isGift) {
-                        const giftDetails = JSON.parse(chat.giftDetails);
-                        return `
-                        <div class="text-sm p-1.5 rounded-lg bg-yellow-500/20 border border-yellow-500/30">
-                            <span class="font-bold text-yellow-300">${chat.nickname}</span>
-                            <span class="text-white"> ได้ส่ง ${giftDetails.icon} ${giftDetails.name}!</span>
-                        </div>
-                        `;
-                    }
-                    return `
-                    <div class="text-sm">
-                        <span class="font-bold text-[var(--primary-purple)]">${chat.nickname}:</span>
-                        <span class="text-white">${chat.message}</span>
-                    </div>
-                    `;
-                }).join('');
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-
-            async function handleSendChat(event) {
-                const button = event.currentTarget;
-                const streamItem = button.closest('.stream-item');
-                const input = streamItem.querySelector('.chat-input');
-                const message = input.value.trim();
-
-                if (!message) return;
-
-                const streamId = streamItem.dataset.streamId;
-                showLoader();
-                try {
-                    await apiRequest('sendChat', {
-                        streamId,
-                        nickname: currentUser.nickname,
-                        message
-                    }, 'GET');
-                    input.value = '';
-                    const chatBox = streamItem.querySelector('.chat-box');
-                    const result = await apiRequest('getChats', { streamId });
-                    renderChat(chatBox, result.data);
-                } catch (error) {
-                    // Error handled by apiRequest
-                } finally {
-                    hideLoader();
-                }
-            }
-
-            // --- Go Live Flow ---
-            function setupGoLiveListeners() {
-                document.getElementById('go-live-btn').addEventListener('click', () => goLiveModal.classList.remove('hidden'));
-                document.getElementById('cancel-live-btn').addEventListener('click', () => goLiveModal.classList.add('hidden'));
-                document.getElementById('start-live-btn').addEventListener('click', handleStartLive);
-            }
-
-            async function handleStartLive() {
-                const title = document.getElementById('stream-title-input').value.trim();
-                if (!title) {
-                    showAlert('warning', 'กรุณาใส่หัวข้อ', 'กรุณาใส่หัวข้อสำหรับสตรีมของคุณ');
-                    return;
-                }
-                
-                goLiveModal.classList.add('hidden');
-                showLoader();
-                try {
-                    await apiRequest('startStream', {
-                        userId: currentUser.userId,
-                        nickname: currentUser.nickname,
-                        title
-                    }, 'GET');
-                    showAlert('success', 'คุณกำลังไลฟ์สด!', 'สตรีมของคุณได้เริ่มต้นแล้ว');
-                    document.getElementById('stream-title-input').value = '';
-                    fetchAndRenderStreams();
-                    simulateAutoBan();
-                } catch (error) {
-                    // Error handled by apiRequest
-                } finally {
-                    hideLoader();
-                }
-            }
-
-            async function handleStopLive() {
-                showLoader();
-                try {
-                    await apiRequest('stopStream', { userId: currentUser.userId }, 'GET');
-                    showAlert('info', 'สตรีมสิ้นสุดแล้ว', 'คุณได้หยุดการไลฟ์สตรีมแล้ว');
-                    fetchAndRenderStreams();
-                    if (autoBanTimeout) clearTimeout(autoBanTimeout);
-                } catch (error) {
-                    // Error handled by apiRequest
-                } finally {
-                    hideLoader();
-                }
-            }
-            
-            // =================================================
-            // --- GIFTING SYSTEM ---
-            // =================================================
-
-            function setupGiftingListeners() {
-                document.getElementById('close-gift-modal-btn').addEventListener('click', () => giftModal.classList.add('hidden'));
-            }
-
-            function handleOpenGiftModal(event) {
-                const streamItem = event.currentTarget.closest('.stream-item');
-                const receiverId = streamItem.dataset.streamerId;
-
-                giftModal.dataset.receiverId = receiverId;
-                document.getElementById('user-coins').textContent = currentUser.coins;
-                
-                const giftOptionsContainer = document.getElementById('gift-options');
-                giftOptionsContainer.innerHTML = gifts.map(gift => `
-                    <button data-gift-id="${gift.id}" class="send-gift-btn p-2 rounded-lg glassmorphism hover:bg-[var(--primary-purple)]/50 transition-colors">
-                        <div class="text-4xl">${gift.icon}</div>
-                        <div class="text-sm font-semibold">${gift.name}</div>
-                        <div class="text-xs text-yellow-400">${gift.price} <i class="fas fa-coins"></i></div>
-                    </button>
-                `).join('');
-
-                document.querySelectorAll('.send-gift-btn').forEach(btn => btn.addEventListener('click', handleSendGift));
-                giftModal.classList.remove('hidden');
-            }
-
-            async function handleSendGift(event) {
-                const giftId = event.currentTarget.dataset.giftId;
-                const gift = gifts.find(g => g.id === giftId);
-                const receiverId = giftModal.dataset.receiverId;
-
-                if (currentUser.coins < gift.price) {
-                    showAlert('error', 'เหรียญไม่เพียงพอ', 'คุณมีเหรียญไม่พอที่จะส่งของขวัญนี้');
-                    return;
-                }
-                
-                giftModal.classList.add('hidden');
-                showLoader();
-
-                try {
-                    const result = await apiRequest('sendGift', {
-                        senderId: currentUser.userId,
-                        receiverId: receiverId,
-                        giftJson: encodeURIComponent(JSON.stringify(gift))
-                    }, 'GET');
-                    
-                    currentUser.coins = result.data.newBalance;
-                    sessionStorage.setItem('sundayLiveUser', JSON.stringify(currentUser));
-                    
-                    if (gift.isSuper) {
-                        playSuperGiftAnimation(gift, currentUser.nickname);
-                    } else {
-                        showAlert('success', 'ส่งของขวัญสำเร็จ!', `คุณได้ส่ง ${gift.name}`);
-                    }
-
-                } catch (error) {
-                    // Error handled by apiRequest
-                } finally {
-                    hideLoader();
-                }
-            }
-            
-            function playSuperGiftAnimation(gift, senderNickname) {
-                const animationContainer = document.getElementById('super-gift-animation');
-                document.getElementById('super-gift-icon').textContent = gift.icon;
-                document.getElementById('super-gift-message').innerHTML = `จาก <span class="text-[var(--primary-purple)]">${senderNickname}</span>!`;
-                
-                animationContainer.classList.remove('hidden');
-                animationContainer.classList.add('flex');
-
-                setTimeout(() => {
-                    animationContainer.classList.add('hidden');
-                    animationContainer.classList.remove('flex');
-                }, 4000);
-            }
-
-            // =================================================
-            // --- AUTO-BAN SIMULATION ---
-            // =================================================
-
-            function simulateAutoBan() {
-                if (autoBanTimeout) clearTimeout(autoBanTimeout);
-
-                const detectionTime = Math.random() * 20000 + 20000;
-                
-                autoBanTimeout = setTimeout(() => {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'คำเตือนด้านเนื้อหา!',
-                        html: 'ระบบของเราตรวจพบเนื้อหาที่อาจไม่เหมาะสม กรุณาปรับปรุงเนื้อหาภายใน <b>10</b> วินาทีเพื่อหลีกเลี่ยงการลงโทษ',
-                        timer: 10000,
-                        timerProgressBar: true,
-                        showConfirmButton: true,
-                        confirmButtonText: 'ฉันแก้ไขแล้ว!',
-                        cancelButtonText: 'ปิด',
-                        confirmButtonColor: 'var(--primary-purple)',
-                        background: '#1f2937',
-                        color: '#f3f4f6',
-                        didOpen: () => {
-                            const timer = Swal.getPopup().querySelector("b");
-                            setInterval(() => {
-                                timer.textContent = `${Math.ceil(Swal.getTimerLeft() / 1000)}`;
-                            }, 100);
-                        }
-                    }).then(async (result) => {
-                        if (result.dismiss === Swal.DismissReason.timer) {
-                            showLoader();
-                            try {
-                                await apiRequest('banUser', { userId: currentUser.userId }, 'GET');
-                                await handleStopLive();
-                                showAlert('error', 'สตรีมถูกยกเลิก', 'สตรีมของคุณถูกยกเลิกเนื่องจากการละเมิดนโยบาย คุณถูกระงับการใช้งาน');
-                            } catch (error) {
-                                // Error handled by apiRequest
-                            } finally {
-                                hideLoader();
-                            }
-                        }
+                currentRoom.participants.forEach(participant => {
+                    participant.tracks.forEach(pub => {
+                        if (pub.track) handleTrack(pub.track, participant);
                     });
-                }, detectionTime);
-            }
-
-            // =================================================
-            // --- ADMIN PANEL ---
-            // =================================================
-
-            function setupAdminEventListeners() {
-                document.getElementById('show-admin-login-link').addEventListener('click', (e) => {
-                    e.preventDefault();
-                    showScreen('admin');
-                });
-                document.getElementById('back-to-user-login').addEventListener('click', (e) => {
-                    e.preventDefault();
-                    showScreen('auth');
+                    participant.on(RoomEvent.TrackSubscribed, (track) => handleTrack(track, participant));
                 });
                 
-                document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    showLoader();
-                    const username = document.getElementById('admin-username').value;
-                    const password = document.getElementById('admin-password').value;
-                    try {
-                        const result = await apiRequest('adminLogin', { username, password }, 'GET');
-                        currentAdmin = result.data;
-                        sessionStorage.setItem('sundayLiveAdmin', JSON.stringify(currentAdmin));
-                        showAdminDashboard();
-                    } catch (error) {
-                        // Error handled by apiRequest
-                    } finally {
-                        hideLoader();
+                currentRoom.on(RoomEvent.ParticipantDisconnected, () => {
+                    videoContainer.innerHTML = '<h3>ผู้ถ่ายทอดสดออกจากห้องไปแล้ว</h3>';
+                });
+
+                currentRoom.on(RoomEvent.DataReceived, (payload, participant) => {
+                    const data = JSON.parse(textDecoder.decode(payload));
+                    if (data.type === 'chat') {
+                        appendChatMessage(data.user, data.message);
                     }
                 });
 
-                document.getElementById('admin-logout-btn').addEventListener('click', () => {
-                    sessionStorage.removeItem('sundayLiveAdmin');
-                    currentAdmin = null;
-                    window.location.reload();
-                });
-
-                document.getElementById('tab-all-users').addEventListener('click', () => switchAdminTab('all-users'));
-                document.getElementById('tab-banned-users').addEventListener('click', () => switchAdminTab('banned-users'));
+            } catch (error) {
+                console.error('Connection failed:', error);
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อห้องไลฟ์ได้', 'error');
             }
+        }
 
-            function showAdminDashboard() {
-                showScreen('admin');
-                adminViews.login.classList.add('hidden');
-                adminViews.dashboard.classList.remove('hidden');
-                fetchAllAdminData();
+        async function startMyOwnLive() {
+            if (isBlocked) {
+                Swal.fire('ถูกระงับ', 'คุณถูกระงับการไลฟ์สดชั่วคราว', 'error');
+                return;
+            }
+            const { value: roomName } = await Swal.fire({ title: 'ตั้งชื่อช่องไลฟ์ของคุณ', input: 'text', inputPlaceholder: 'เช่น MySundayLive', showCancelButton: true, inputValidator: v => !v && 'กรุณาตั้งชื่อช่อง!' });
+            if (roomName) {
+                addNewLiveCard(roomName, currentUsername);
+                currentLiveIndex = liveRooms.findIndex(r => r.name === roomName);
+                connectToLiveKit(roomName, true);
+            }
+        }
+
+        function joinLive(roomName) {
+            currentLiveIndex = liveRooms.findIndex(r => r.name === roomName);
+            if (currentLiveIndex === -1) return;
+            connectToLiveKit(roomName, false);
+        }
+
+        async function leaveLiveRoom(switchToHome = true) {
+            if (currentRoom) {
+                await currentRoom.disconnect();
+                currentRoom = null;
+            }
+            document.getElementById('live-room-page').classList.remove('active');
+            if (switchToHome) showPage('home-page');
+        }
+
+        function addNewLiveCard(roomName, streamerName) {
+            if (liveRooms.some(r => r.name === roomName)) return;
+            liveRooms.push({ name: roomName, streamer: streamerName });
+            renderLiveCards();
+        }
+        
+        function renderLiveCards() {
+            liveGrid.innerHTML = '';
+            if (liveRooms.length === 0) {
+                liveGrid.innerHTML = `<div id="no-live-streams" style="text-align: center; grid-column: 1 / -1; padding: 20px;">ยังไม่มีใครไลฟ์สดเลย... คุณเป็นคนแรกสิ!</div>`;
+                return;
             }
             
-            async function fetchAllAdminData() {
-                showLoader();
-                try {
-                    const [usersResult, bansResult] = await Promise.all([
-                        apiRequest('adminGetUsers'),
-                        apiRequest('adminGetBans')
-                    ]);
-                    renderAdminAllUsers(usersResult.data);
-                    renderAdminBannedUsers(bansResult.data);
-                } catch (error) {
-                    showAlert('error', 'ไม่สามารถโหลดข้อมูลผู้ดูแลได้', error.message);
-                } finally {
-                    hideLoader();
-                }
+            liveRooms.forEach(room => {
+                const card = document.createElement('div');
+                card.className = 'live-card';
+                card.addEventListener('click', () => joinLive(room.name));
+                card.innerHTML = `<div class="thumbnail"><i data-lucide="clapperboard" style="width: 48px; height: 48px;"></i></div>
+                                  <div class="live-card-info"><h4>${room.name}</h4><p>โดย: ${room.streamer}</p></div>`;
+                liveGrid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+        
+        function handleLiveScroll(event) {
+            if (isSwitching) return;
+            isSwitching = true;
+            
+            const direction = event.deltaY > 0 ? 'up' : 'down';
+            let nextIndex = currentLiveIndex;
+
+            if (direction === 'up') nextIndex++;
+            else nextIndex--;
+
+            if (nextIndex >= 0 && nextIndex < liveRooms.length) {
+                const nextRoom = liveRooms[nextIndex];
+                currentLiveIndex = nextIndex;
+                connectToLiveKit(nextRoom.name, false);
             }
 
-            function renderAdminAllUsers(users) {
-                const list = document.getElementById('all-users-list');
-                list.innerHTML = users.map(user => `
-                    <div class="p-4 rounded-lg glassmorphism">
-                        <p class="font-bold text-lg">${user.nickname} <span class="text-sm font-normal text-gray-400">(${user.fullName})</span></p>
-                        <p class="text-sm text-gray-300">${user.email}</p>
-                        <p class="text-sm text-gray-400">UserID: ${user.userId}</p>
-                        <p class="mt-2 text-yellow-400"><i class="fas fa-coins"></i> ${user.coins}</p>
-                    </div>
-                `).join('');
-            }
+            setTimeout(() => { isSwitching = false; }, 1000);
+        }
 
-            function renderAdminBannedUsers(bans) {
-                const list = document.getElementById('banned-users-list');
-                if (bans.length === 0) {
-                    list.innerHTML = `<p class="col-span-full text-center py-8">ไม่พบผู้ใช้ที่ถูกแบน</p>`;
+        function sendChatMessage() {
+            const message = chatInput.value.trim();
+            if (!message || !currentRoom) return;
+
+            const isStreamer = currentRoom.localParticipant.identity === currentUsername;
+            
+            if (containsProfanity(message)) {
+                if (isStreamer) {
+                    streamerWarnings++;
+                    if (streamerWarnings >= 4) {
+                        Swal.fire('ไลฟ์ถูกปิด!', 'คุณละเมิดกฎชุมชนครบ 4 ครั้ง ไลฟ์ของคุณจะถูกปิดและระงับ 3 นาที', 'error').then(() => {
+                            leaveLiveRoom(true);
+                            isBlocked = true;
+                            blockTimeoutId = setTimeout(() => {
+                                isBlocked = false;
+                                Swal.fire('ปลดล็อคแล้ว', 'คุณสามารถไลฟ์สดได้อีกครั้ง', 'success');
+                            }, 180000); // 3 minutes
+                        });
+                        return;
+                    } else {
+                        Swal.fire('คำเตือน!', `ตรวจพบคำไม่เหมาะสม นี่คือคำเตือนครั้งที่ ${streamerWarnings}/3`, 'warning');
+                    }
+                } else {
+                    Swal.fire('คำเตือน!', 'โปรดใช้คำสุภาพในการแสดงความคิดเห็น', 'warning');
                     return;
                 }
-                list.innerHTML = bans.map(ban => `
-                    <div class="p-4 rounded-lg glassmorphism border-red-500/50 border">
-                        <p class="font-bold text-lg text-red-400">${ban.nickname}</p>
-                        <p class="text-sm text-gray-300">UserID: ${ban.userId}</p>
-                        <p class="text-sm text-gray-400">จำนวนครั้งที่แบน: ${ban.banCount}</p>
-                        <p class="text-sm text-gray-400">สถานะ: ${ban.isPermanentBan ? 'ถาวร' : 'ชั่วคราว'}</p>
-                        <p class="text-sm text-gray-400">หมดอายุ: ${ban.isPermanentBan ? 'ไม่มี' : new Date(ban.bannedUntil).toLocaleString('th-TH')}</p>
-                        <button data-userid="${ban.userId}" class="unban-btn mt-4 w-full py-1 font-bold text-gray-900 bg-green-400 rounded-lg hover:bg-green-300">ปลดแบนผู้ใช้</button>
-                    </div>
-                `).join('');
-                
-                document.querySelectorAll('.unban-btn').forEach(btn => btn.addEventListener('click', handleUnbanUser));
             }
             
-            async function handleUnbanUser(event) {
-                const userId = event.currentTarget.dataset.userid;
-                Swal.fire({
-                    title: 'คุณแน่ใจหรือไม่?',
-                    text: `การกระทำนี้จะปลดแบนผู้ใช้ที่มี ID: ${userId}`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'ใช่, ปลดแบนเลย!',
-                    cancelButtonText: 'ยกเลิก',
-                    background: '#1f2937',
-                    color: '#f3f4f6'
-                }).then(async (result) => {
-                    if (result.isConfirmed) {
-                        showLoader();
-                        try {
-                            await apiRequest('adminUnbanUser', { userId }, 'GET');
-                            showAlert('success', 'ปลดแบนผู้ใช้สำเร็จ', 'ผู้ใช้ได้รับการปลดแบนเรียบร้อยแล้ว');
-                            fetchAllAdminData(); // Refresh data
-                        } catch(error) {
-                            // Error handled by apiRequest
-                        } finally {
-                            hideLoader();
-                        }
-                    }
-                });
-            }
-
-            function switchAdminTab(tabName) {
-                const tabs = {
-                    'all-users': { btn: document.getElementById('tab-all-users'), content: document.getElementById('content-all-users') },
-                    'banned-users': { btn: document.getElementById('tab-banned-users'), content: document.getElementById('content-banned-users') }
-                };
-                Object.values(tabs).forEach(t => {
-                    t.btn.classList.remove('border-[var(--primary-purple)]', 'text-[var(--primary-purple)]');
-                    t.btn.classList.add('border-transparent', 'text-gray-400');
-                    t.content.classList.add('hidden');
-                });
-                tabs[tabName].btn.classList.add('border-[var(--primary-purple)]', 'text-[var(--primary-purple)]');
-                tabs[tabName].btn.classList.remove('border-transparent', 'text-gray-400');
-                tabs[tabName].content.classList.remove('hidden');
-            }
+            const data = { type: 'chat', user: currentUsername, message: message };
+            const payload = textEncoder.encode(JSON.stringify(data));
+            currentRoom.localParticipant.publishData(payload, { reliable: true });
             
-            // =================================================
-            // --- MAIN EVENT LISTENERS ---
-            // =================================================
+            chatInput.value = '';
+        }
 
-            function setupEventListeners() {
-                setupAuthEventListeners();
-                setupAdminEventListeners();
-                
-                // Main App Listeners
-                document.getElementById('logout-btn').addEventListener('click', handleLogout);
-                document.getElementById('home-btn').addEventListener('click', fetchAndRenderStreams);
-                setupGoLiveListeners();
-                setupGiftingListeners();
+        function appendChatMessage(user, message) {
+            const messageEl = document.createElement('div');
+            messageEl.className = 'chat-message';
+            messageEl.innerHTML = `<span>${user}:</span> ${message}`;
+            chatBox.appendChild(messageEl);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
 
-                // Scroll listener for TikTok-style feed
-                streamContainer.addEventListener('scroll', () => {
-                    const newIndex = Math.round(streamContainer.scrollTop / streamContainer.clientHeight);
-                    if (newIndex !== currentStreamIndex) {
-                        currentStreamIndex = newIndex;
-                        updateActiveStream();
-                    }
-                });
-            }
+        function sendGift(giftType, cost) {
+            if (coinBalance < cost) { Swal.fire({ icon: 'warning', title: 'เหรียญไม่พอ', text: 'เหรียญของคุณไม่เพียงพอ!' }); return; }
+            coinBalance -= cost;
+            updateCoinDisplay();
+            const chatMessage = document.createElement('div');
+            chatMessage.className = 'chat-message';
+            chatMessage.innerHTML = `<span>${currentUsername}</span> ได้ส่งของขวัญ!`;
+            chatBox.appendChild(chatMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
 
-            // --- Let's Go! ---
-            initialize();
-        });
-    </script>
+        function toggleMic() {
+            if(!currentRoom) return;
+            const enabled = currentRoom.localParticipant.isMicrophoneEnabled;
+            currentRoom.localParticipant.setMicrophoneEnabled(!enabled);
+            document.getElementById('mic-icon').setAttribute('data-lucide', enabled ? 'mic-off' : 'mic');
+            lucide.createIcons();
+        }
+
+        function toggleCam() {
+            if(!currentRoom) return;
+            const enabled = currentRoom.localParticipant.isCameraEnabled;
+            currentRoom.localParticipant.setCameraEnabled(!enabled);
+            document.getElementById('cam-icon').setAttribute('data-lucide', enabled ? 'video-off' : 'video');
+            lucide.createIcons();
+        }
+
+        return { init };
+    })();
+
+    App.init();
+});
+</script>
 </body>
 </html>
